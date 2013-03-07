@@ -1,0 +1,5 @@
+Column A,Column B,Column C,Column D
+1, 1-Jan-2013,"Description for column A",5
+2, 2-Jul-2013,"Description for column B",6.0
+3, 3-Aug-2013,,10
+4, 4-Dec-2013,"Description for column D",12.3

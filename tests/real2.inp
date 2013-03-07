@@ -1,0 +1,9 @@
+Equipment Ref,Task,Std Job,Task Description,Freq,Last Performed Date,Next Sch Date,Type
+IB-PBP-CBP-E211,P001,IP0007,Vessel Internal Statutory Inspection,1460,29/09/2006,28/09/2010,SO&M
+IB-PBP-CBP-E211,P002,IP0019,Vessel External Statutory Inspection,365,23/01/2007,23/01/2008,SO&M
+IB-PBP-CBP-E603,P001,IP0007,Vessel Internal Statutory Inspection,1460,10/11/2006,9/11/2010,SO&M
+IB-PBP-CBP-E603,P002,IP0019,Vessel External Statutory Inspection,365,15/11/2006,15/11/2007,SO&M
+IB-PBP-CBP-HS8840,P001,IP0030,Perform Critical Function Test,180,4/08/2006,31/01/2007,O&M
+IB-PBP-CBP-HS8851,P001,IP0030,Perform Critical Function Test,180,31/01/2007,30/07/2007,O&M
+IB-PBP-CBP-HS8871,P001,IP0030,Perform Critical Function Test,180,31/01/2007,30/07/2007,O&M
+IB-PBP-CBP-HS8888,P001,IP0030,Perform Critical Function Test,180,31/01/2007,30/07/2007,O&M
