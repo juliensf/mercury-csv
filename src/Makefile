@@ -12,6 +12,9 @@ rebuild:
 install:
 	$(MMC) --make libmercury_csv.install
 
+tags: $(wildcard *.m)
+	mtags $^
+
 .PHONY: clean
 clean:
 	$(MMC) --make mercury_csv.clean

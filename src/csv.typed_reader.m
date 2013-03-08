@@ -222,6 +222,10 @@ get_header(Reader, Result, !State) :-
         )
     ).
 
+:- type process_record_result
+    --->    prr_ok(list(field_value))
+    ;       prr_error(int, string).
+
 get_record(Reader, Result, !State) :-
     % Get the stream line number *before* we read in the next record.
     Stream = Reader ^ csv_stream,
@@ -233,14 +237,14 @@ get_record(Reader, Result, !State) :-
         FieldDescs = Reader ^ csv_record_desc,
         FieldNum = 1,
         process_fields(StreamName, LineNo, FieldDescs, RawRecord, FieldNum,
-            [], ProcessFieldResult),
+            [], ProcessFieldsResult),
         (
-            ProcessFieldResult = pfr_ok(RevFields),
+            ProcessFieldsResult = prr_ok(RevFields),
             list.reverse(RevFields, Fields),
             Record = record(Fields),
             Result = ok(Record)
         ;
-            ProcessFieldResult = pfr_error(ErrorFieldNum, ErrorMsg),
+            ProcessFieldsResult = prr_error(ErrorFieldNum, ErrorMsg),
             Error = csv_error(StreamName, LineNo, ErrorFieldNum, ErrorMsg),
             Result = error(Error)
         )
@@ -254,16 +258,16 @@ get_record(Reader, Result, !State) :-
 
 %-----------------------------------------------------------------------------%
 
-:- type process_field_result(T)
-    --->    pfr_ok(T)
+:- type process_field_result
+    --->    pfr_ok(field_value)
+    ;       pfr_discard
     ;       pfr_error(int, string).
 
 :- pred process_fields(stream.name::in, int::in,
     list(field_desc)::in, list(raw_field)::in,
-    int::in, list(field_value)::in,
-    process_field_result(list(field_value))::out) is det.
+    int::in, list(field_value)::in, process_record_result::out) is det.
 
-process_fields(_, _, [], [], _, FieldValues, pfr_ok(FieldValues)).
+process_fields(_, _, [], [], _, FieldValues, prr_ok(FieldValues)).
 process_fields(_, _, [_ | _], [], _, _, _) :-
     unexpected($module, $pred, "argument length mismatch").
 process_fields(_, _, [], [_ | _], _, _, _) :-
@@ -277,12 +281,30 @@ process_fields(StreamName, LineNo, [Desc | Descs], [RawField | RawFields],
         process_fields(StreamName, LineNo, Descs, RawFields, FieldNum + 1,
             [FieldValue | FieldValues], MaybeResult)
     ;
+        MaybeFieldResult = pfr_discard,
+        process_fields(StreamName, LineNo, Descs, RawFields, FieldNum + 1,
+            FieldValues, MaybeResult)
+    ;
         MaybeFieldResult = pfr_error(ErrorFieldNum, ErrorMsg),
-        MaybeResult = pfr_error(ErrorFieldNum, ErrorMsg)
+        MaybeResult = prr_error(ErrorFieldNum, ErrorMsg)
     ).
 
 :- pred process_field(stream.name::in, int::in, field_desc::in, raw_field::in,
-    int::in, process_field_result(field_value)::out) is det.
+    int::in, process_field_result::out) is det.
+
+process_field(_, _, Desc, RawField, FieldNum, MaybeResult) :-
+    Desc = discard(MaybeWidthLimit),
+    (
+        MaybeWidthLimit = no_limit,
+        MaybeResult = pfr_discard
+    ;
+        MaybeWidthLimit = limited(Limit),
+        string.length(RawField, RawFieldLength),
+        ( if RawFieldLength > Limit
+        then MaybeResult = pfr_error(FieldNum, "field width exceeded")
+        else MaybeResult = pfr_discard
+        )
+    ).
 
 process_field(StreamName, LineNo, Desc, RawField, FieldNum, MaybeResult) :-
     Desc = field_desc(Type, MaybeWidthLimit, TrimWS),
@@ -309,7 +331,7 @@ process_field(StreamName, LineNo, Desc, RawField, FieldNum, MaybeResult) :-
     ).
 
 :- pred process_field_apply_actions(stream.name::in, int::in, field_type::in,
-    raw_field::in, int::in, process_field_result(field_value)::out) is det.
+    raw_field::in, int::in, process_field_result::out) is det.
 
 process_field_apply_actions(StreamName, LineNo, Type, RawField, FieldNum,
         MaybeResult) :-
@@ -354,7 +376,7 @@ process_field_apply_actions(StreamName, LineNo, Type, RawField, FieldNum,
 
 :- pred process_field_apply_actions_bool(bool_handler::in,
     field_actions(bool)::in, raw_field::in, int::in, 
-    process_field_result(field_value)::out) is det.
+    process_field_result::out) is det.
 
 process_field_apply_actions_bool(BoolHandler, Actions, RawField,
         FieldNum, MaybeResult) :-
@@ -381,7 +403,7 @@ process_field_apply_actions_bool(BoolHandler, Actions, RawField,
         
 :- pred process_field_apply_actions_int(float_int_handler::in,
     field_actions(int)::in, raw_field::in, int::in, 
-    process_field_result(field_value)::out) is det.
+    process_field_result::out) is det.
 
 process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
         FieldNum, MaybeResult) :-
@@ -423,8 +445,7 @@ process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
 %
 
 :- pred process_field_apply_actions_float(field_actions(float)::in,
-    raw_field::in, int::in, 
-    process_field_result(field_value)::out) is det.
+    raw_field::in, int::in, process_field_result::out) is det.
 
 process_field_apply_actions_float(Actions, RawField, FieldNum, MaybeResult) :-
     ( if string.to_float(RawField, Float) then
@@ -446,8 +467,7 @@ process_field_apply_actions_float(Actions, RawField, FieldNum, MaybeResult) :-
 %
         
 :- pred process_field_apply_actions_floatstr(field_actions(string)::in,
-    raw_field::in, int::in, 
-    process_field_result(field_value)::out) is det.
+    raw_field::in, int::in, process_field_result::out) is det.
 
 process_field_apply_actions_floatstr(Actions, RawField, FieldNum,
         MaybeResult) :-
@@ -478,7 +498,7 @@ process_field_apply_actions_floatstr(Actions, RawField, FieldNum,
 %
 
 :- pred process_field_apply_actions_string(field_actions(string)::in,
-    raw_field::in, int::in, process_field_result(field_value)::out) is det.
+    raw_field::in, int::in, process_field_result::out) is det.
 
 process_field_apply_actions_string(Actions, RawField, FieldNum,
         MaybeResult) :-
@@ -497,8 +517,8 @@ process_field_apply_actions_string(Actions, RawField, FieldNum,
 %
 
 :- pred process_field_apply_actions_date(date_format::in,
-    field_actions(date)::in, raw_field::in, int::in,
-    process_field_result(field_value)::out) is det.
+    field_actions(date)::in, raw_field::in, int::in, process_field_result::out)
+    is det.
 
 process_field_apply_actions_date(Format, Actions, RawField, FieldNum,
         MaybeResult) :-
@@ -649,7 +669,7 @@ abbrev_name_to_month_2("Dec",  december).
 
 :- pred process_field_apply_actions_term(stream.name::in, int::in,
     field_actions({varset, term})::in, raw_field::in, int::in,
-    process_field_result(field_value)::out) is det.
+    process_field_result::out) is det.
 
 process_field_apply_actions_term(StreamName, LineNo, Actions, RawField,
         FieldNum, MaybeResult) :-
@@ -698,7 +718,7 @@ process_field_apply_actions_term(StreamName, LineNo, Actions, RawField,
 
 :- pred process_field_apply_actions_univ(univ_handler::in,
     field_actions(univ)::in, raw_field::in, int::in, 
-    process_field_result(field_value)::out) is det.
+    process_field_result::out) is det.
 
 process_field_apply_actions_univ(UnivHandler, Actions, RawField,
         FieldNum, MaybeResult) :-

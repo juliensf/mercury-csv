@@ -366,6 +366,28 @@ tests = [
             field_desc(univ(fruit_to_univ, []), limited(6), do_not_trim_whitespace),
             field_desc(univ(fruit_to_univ, []), limited(6), do_not_trim_whitespace)
         ]
+    ),
+
+    test_case(
+        test_type_valid,
+        "discard",
+        no_header,
+        [
+            field_desc(string([]), limited(6), do_not_trim_whitespace),
+            discard(no_limit),
+            field_desc(int(do_not_allow_floats, []), no_limit, do_not_trim_whitespace)
+        ]
+    ),
+
+    test_case(
+        test_type_invalid,
+        "discard-bad",
+        no_header,
+        [
+            field_desc(string([]), limited(6), do_not_trim_whitespace),
+            discard(limited(3)),
+            field_desc(string([]), limited(6), do_not_trim_whitespace)
+        ]
     )
 ].
 

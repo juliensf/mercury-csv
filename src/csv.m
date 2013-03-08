@@ -126,7 +126,15 @@
 :- type csv.record_desc == list(field_desc).
 
 :- type csv.field_desc
-    --->    field_desc(
+    --->    discard(field_width_limit)
+            % The field should be discarded and not returned as part of the
+            % records.  Note if there is a field width limit it will still
+            % be enforced even though the field is being discarded.
+            %
+            % XXX fields in the header for discarded fields currently remain in
+            % the header.
+
+    ;       field_desc(
                 field_type :: field_type,
                 % What type of Mercury value does this field represent.  Also,
                 % any details of any optional checking or transformation that
@@ -527,7 +535,7 @@ get_max_field_width(HeaderDesc, FieldDescs) = MaxWidth :-
         FieldDescs = [FieldDesc | FieldDescsPrime],
         (
             HeaderDesc = no_header,
-            FirstFieldWidth = FieldDesc ^ field_width_limit,
+            FirstFieldWidth = get_field_width_limit(FieldDesc),
             get_max_field_width_2(FieldDescsPrime, FirstFieldWidth, MaxWidth)
         ;
             HeaderDesc = header_desc(HeaderFieldWidth),
@@ -544,7 +552,7 @@ get_max_field_width_2([FieldDesc | FieldDescs], !MaybeLimit) :-
         !.MaybeLimit = no_limit
     ;
         !.MaybeLimit = limited(Limit),
-        FieldWidthLimit = FieldDesc ^ field_width_limit,
+        FieldWidthLimit = get_field_width_limit(FieldDesc),
         (
             FieldWidthLimit = no_limit,
             !:MaybeLimit = no_limit
@@ -560,6 +568,11 @@ get_max_field_width_2([FieldDesc | FieldDescs], !MaybeLimit) :-
 
 has_header(Reader) :-
     Reader ^ csv_header_desc = header_desc(_).
+
+:- func get_field_width_limit(field_desc) = field_width_limit.
+
+get_field_width_limit(discard(MaybeLimit)) = MaybeLimit.
+get_field_width_limit(field_desc(_, MaybeLimit, _)) = MaybeLimit.
 
 %----------------------------------------------------------------------------%
 
