@@ -17,8 +17,7 @@
     --->    client_reader(csv.reader(Stream))
     ;       client_raw_reader(csv.raw_reader(Stream)).
 
-
-:- type record_result(Error) == stream.result(list(string), csv.error(Error)).
+:- type record_result(Error) == stream.result(raw_record, csv.error(Error)).
 
 :- pred get_next_record(client(Stream)::in, record_result(Error)::out,
     State::di, State::uo) is det 
@@ -109,6 +108,8 @@ get_next_record(Reader, Result, !State) :-
 get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !State) :-
     NextFieldNum = !.FieldsRead + 1,
     next_raw_field(Reader, NextFieldNum, FieldResult, !LastSeen, !State),
+    Stream = get_client_stream(Reader),
+    stream.get_line(Stream, LineNo, !State),
     (
         FieldResult = fr_field(Field),
         !:FieldsRead = !.FieldsRead + 1,
@@ -117,9 +118,7 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !State) :-
             MaybeFieldLimit = exactly(FieldLimit),
             !.FieldsRead > FieldLimit
         then
-            Stream = get_client_stream(Reader),
             stream.name(Stream, Name, !State),
-            stream.get_line(Stream, LineNo, !State),
             Error = csv_error(
                 Name, 
                 LineNo, 
@@ -138,7 +137,7 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !State) :-
     ;
         FieldResult = fr_end_of_record,
         list.reverse(!Fields),
-        Result = ok(!.Fields)
+        Result = ok(raw_record(LineNo, !.Fields))
     ;
         FieldResult = fr_eof,
         (
@@ -148,7 +147,7 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !State) :-
             % The EOF was the terminating this record.
             !.Fields = [_ | _],
             list.reverse(!Fields),
-            Result = ok(!.Fields)
+            Result = ok(raw_record(LineNo, !.Fields))
         )
     ).
 

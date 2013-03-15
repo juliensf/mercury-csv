@@ -122,12 +122,13 @@
 
 get_csv(Desc, Result, !State) :-
     Desc = csv_reader(Stream, HeaderDesc, _, _, _, _),
+    stream.name(Stream, Name, !State),
     (
         HeaderDesc = no_header,
         get_records(Desc, RecordsResult, !State),
         (
             RecordsResult = ok(Records),
-            Result = ok(csv(no, Records))
+            Result = ok(csv(Name, no, Records))
         ;
             RecordsResult = error(Error),
             Result = error(Error)
@@ -140,14 +141,13 @@ get_csv(Desc, Result, !State) :-
             get_records(Desc, RecordsResult, !State),
             (
                 RecordsResult = ok(Records),
-                Result = ok(csv(yes(Header), Records))
+                Result = ok(csv(Name, yes(Header), Records))
             ;
                 RecordsResult = error(Error),
                 Result = error(Error)
             )
         ;
             HeaderResult = eof,
-            stream.name(Stream, Name, !State),
             stream.get_line(Stream, LineNo, !State),
             FieldNum = 1,
             HeaderError = csv_error(Name, LineNo, FieldNum,
@@ -189,7 +189,8 @@ get_header(Reader, Result, !State) :-
         stream.get_line(get_stream(Reader), LineNo, !State),
         get_next_record(client_reader(Reader), RecordResult, !State),
         (
-            RecordResult = ok(HeaderFields),
+            RecordResult = ok(RawHeader),
+            RawHeader = raw_record(_, HeaderFields), 
             RecordDesc = Reader ^ csv_record_desc,
             list.length(RecordDesc, NumFields),
             list.length(HeaderFields, NumHeaderFields),
@@ -236,12 +237,13 @@ get_record(Reader, Result, !State) :-
         RecordResult = ok(RawRecord),
         FieldDescs = Reader ^ csv_record_desc,
         FieldNum = 1,
-        process_fields(StreamName, LineNo, FieldDescs, RawRecord, FieldNum,
+        RawRecord = raw_record(_, RawFields),
+        process_fields(StreamName, LineNo, FieldDescs, RawFields, FieldNum,
             [], ProcessFieldsResult),
         (
             ProcessFieldsResult = prr_ok(RevFields),
             list.reverse(RevFields, Fields),
-            Record = record(Fields),
+            Record = record(LineNo, Fields),
             Result = ok(Record)
         ;
             ProcessFieldsResult = prr_error(ErrorFieldNum, ErrorMsg),

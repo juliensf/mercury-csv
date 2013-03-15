@@ -142,7 +142,7 @@ process_csv(InputFile, !IO) :-
     stream.get(Reader, MaybeData, !IO),
     (
         MaybeData = ok(Data),
-        Data = csv(Header, Records),
+        Data = csv(_StreamName, Header, Records),
 
         % Print out the CSV data we have just read.
         %

@@ -88,10 +88,9 @@ write_quoted_string(String, !IO) :-
 	io::di, io::uo) is det.
 
 write_record(File, Record, !IO) :-
-	Record = record(Fields),
+	Record = record(_LineNo, Fields),
     io.write_list(File, Fields, ",", write_field_value, !IO),
     io.nl(File, !IO).
-
 
 :- pred write_field_value(field_value::in, io::di, io::uo) is det.
 

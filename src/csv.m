@@ -240,8 +240,9 @@
     %
 :- type csv
     --->    csv(
-                csv_header  :: maybe(header),
-                csv_records :: list(record) 
+                csv_stream_name :: stream.name,
+                csv_header      :: maybe(header),
+                csv_records     :: records 
             ).
 
     % Values of this type represent a CSV header.
@@ -252,7 +253,10 @@
     % Values of this type represent a CSV record.
     %
 :- type csv.record
-    --->   record(list(field_value)).
+    --->    record(
+                record_line_no ::int, 
+                record_fields  :: list(field_value)
+            ).
 
 :- type csv.records == list(record).
 
@@ -386,9 +390,14 @@
     ).
 
 :- type csv.raw_record
-    --->    raw_record(list(csv.raw_field)).
+    --->    raw_record(
+                raw_record_line_no :: int,
+                raw_record_field   :: raw_fields
+            ).
 
 :- type csv.raw_field == string.
+
+:- type csv.raw_fields == list(csv.raw_field).
 
 %----------------------------------------------------------------------------%
 % 

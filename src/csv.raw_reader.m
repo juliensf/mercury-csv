@@ -101,8 +101,8 @@ get_raw_record(Reader, Result, !State) :-
     Client = client_raw_reader(Reader),
     get_next_record(Client, RecordResult, !State),
     (
-        RecordResult = ok(Fields),
-        Result = ok(raw_record(Fields))
+        RecordResult = ok(RawRecord),
+        Result = ok(RawRecord)
     ;
         RecordResult = eof,
         Result = eof
@@ -117,8 +117,8 @@ fold(Reader, Pred, !.Acc, Result, !State) :-
     Client = client_raw_reader(Reader),
     get_next_record(Client, RecordResult, !State),
     (
-        RecordResult = ok(Record),
-        Pred(raw_record(Record), !Acc),
+        RecordResult = ok(RawRecord),
+        Pred(RawRecord, !Acc),
         fold(Reader, Pred, !.Acc, Result, !State)
     ;
         RecordResult = eof,
@@ -132,8 +132,8 @@ fold_state(Reader, Pred, Result, !State) :-
     Client = client_raw_reader(Reader),
     get_next_record(Client, RecordResult, !State),
     (
-        RecordResult = ok(Record),
-        Pred(raw_record(Record), !State),
+        RecordResult = ok(RawRecord),
+        Pred(RawRecord, !State),
         fold_state(Reader, Pred, Result, !State)
     ;
         RecordResult = eof,
@@ -147,8 +147,8 @@ fold2_state(Reader, Pred, !.Acc, Result, !State) :-
     Client = client_raw_reader(Reader),
     get_next_record(Client, RecordResult, !State),
     (
-        RecordResult = ok(Record),
-        Pred(raw_record(Record), !Acc, !State),
+        RecordResult = ok(RawRecord),
+        Pred(RawRecord, !Acc, !State),
         fold2_state(Reader, Pred, !.Acc, Result, !State)
     ;
         RecordResult = eof,
@@ -162,8 +162,8 @@ fold_maybe_stop(Reader, Pred, !.Acc, Result, !State) :-
     Client = client_raw_reader(Reader),
     get_next_record(Client, RecordResult, !State),
     (
-        RecordResult = ok(Record),
-        Pred(raw_record(Record), Continue, !Acc),
+        RecordResult = ok(RawRecord),
+        Pred(RawRecord, Continue, !Acc),
         (
             Continue = yes,
             fold_maybe_stop(Reader, Pred, !.Acc, Result, !State)
@@ -183,8 +183,8 @@ fold_state_maybe_stop(Reader, Pred, Result, !State) :-
     Client = client_raw_reader(Reader),
     get_next_record(Client, RecordResult, !State),
     (
-        RecordResult = ok(Record),
-        Pred(raw_record(Record), Continue, !State),
+        RecordResult = ok(RawRecord),
+        Pred(RawRecord, Continue, !State),
         (
             Continue = yes,
             fold_state_maybe_stop(Reader, Pred, Result, !State)
@@ -204,8 +204,8 @@ fold2_state_maybe_stop(Reader, Pred, !.Acc, Result, !State) :-
     Client = client_raw_reader(Reader),
     get_next_record(Client, RecordResult, !State),
     (
-        RecordResult = ok(Record),
-        Pred(raw_record(Record), Continue, !Acc, !State),
+        RecordResult = ok(RawRecord),
+        Pred(RawRecord, Continue, !Acc, !State),
         (
             Continue = yes,
             fold2_state_maybe_stop(Reader, Pred, !.Acc, Result, !State)
