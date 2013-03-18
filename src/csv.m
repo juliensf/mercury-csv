@@ -283,6 +283,7 @@
     ;       floatstr(string)
     ;       string(string)
     ;       date(date)
+    ;       date_time(date)
     ;       term(varset, term)
     ;       univ(univ).
 

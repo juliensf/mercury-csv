@@ -115,6 +115,9 @@ write_field_value(Value, !IO) :-
         Value = date(Date),
         io.write(Date, !IO)
     ;
+        Value = date_time(DateTime),
+        io.write(DateTime, !IO)
+    ;
         Value = term(_Varset, Term),
         io.write(Term, !IO)
     ;

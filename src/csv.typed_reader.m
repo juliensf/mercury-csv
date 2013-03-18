@@ -699,7 +699,7 @@ process_field_apply_actions_date_time(Format, Actions, RawField, FieldNum,
         apply_field_actions(Actions, DateTime, ActionResult),
         (
             ActionResult = ok(DateTimePrime),
-            MaybeResult = pfr_ok(date(DateTimePrime))
+            MaybeResult = pfr_ok(date_time(DateTimePrime))
         ;
             ActionResult = error(ActionError),
             MaybeResult = pfr_error(FieldNum, ActionError)
