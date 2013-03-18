@@ -362,6 +362,10 @@ process_field_apply_actions(StreamName, LineNo, Type, RawField, FieldNum,
         process_field_apply_actions_date(Format, Actions, RawField,
             FieldNum, MaybeResult)
     ;
+        Type = date_time(Format, Actions),
+        process_field_apply_actions_date_time(Format, Actions, RawField,
+            FieldNum, MaybeResult)
+    ;
         Type = term(Actions),
         process_field_apply_actions_term(StreamName, LineNo, Actions,
             RawField, FieldNum, MaybeResult)
@@ -666,6 +670,61 @@ abbrev_name_to_month_2("Sep",  september).
 abbrev_name_to_month_2("Oct",  october).
 abbrev_name_to_month_2("Nov",  november).
 abbrev_name_to_month_2("Dec",  december).
+
+%----------------------------------------------------------------------------%
+
+:- pred process_field_apply_actions_date_time(date_time_format::in,
+    field_actions(date)::in, raw_field::in, int::in, process_field_result::out)
+    is det.
+
+process_field_apply_actions_date_time(Format, Actions, RawField, FieldNum,
+        MaybeResult) :-
+    Format = mm_dd_yyyy_hh_mm(DateSep, DateTimeSep, TimeSep),
+    % XXX there's no good reason for this restriction.
+    ( if 
+        ( DateSep = TimeSep
+        ; DateSep = DateTimeSep
+        ; DateTimeSep = TimeSep
+        )
+    then
+        error("separators for date_times must be distinct")
+    else
+        true
+    ),
+    DateTimeComponentStrs = string.split_at_string(DateTimeSep, RawField),
+    ( if
+        mm_dd_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
+            DateTime)
+    then
+        apply_field_actions(Actions, DateTime, ActionResult),
+        (
+            ActionResult = ok(DateTimePrime),
+            MaybeResult = pfr_ok(date(DateTimePrime))
+        ;
+            ActionResult = error(ActionError),
+            MaybeResult = pfr_error(FieldNum, ActionError)
+        )
+    else
+        MaybeResult = pfr_error(FieldNum, "not a valid date-time")
+    ).
+    
+:- pred mm_dd_yyyy_hh_mm_to_date(string::in, string::in,
+    list(string)::in, date::out) is semidet.
+
+mm_dd_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
+        DateTime) :-
+    DateTimeComponentStrs = [DateStr, TimeStr],
+    DateComponentStrs = string.split_at_string(DateSep, DateStr),
+    TimeComponentStrs = string.split_at_string(TimeSep, TimeStr),
+    DateComponentStrs = [MonthStr, DayStr, YearStr],
+    string.to_int(YearStr, Year),
+    string.to_int(MonthStr, MonthNum),
+    string.to_int(DayStr, Day),
+    int_to_month(MonthNum, Month),
+    TimeComponentStrs = [HourStr, MinuteStr],
+    string.to_int(HourStr, Hour),
+    string.to_int(MinuteStr, Minute),
+    calendar.init_date(Year, Month, Day, Hour, Minute, 0, 0, DateTime).
 
 %----------------------------------------------------------------------------%
 

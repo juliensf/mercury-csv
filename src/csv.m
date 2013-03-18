@@ -185,6 +185,11 @@
             % The time component of the resulting date is always set to
             % midnight.  (XXX because the standard library doesn't have type
             % that represents only dates without a time component.)
+            
+    ;       date_time(date_time_format, field_actions(date))
+            % A Mercury calander.date/0 value.
+            % The time component is set as specified.
+            % XXX support for this is currently very limited.
     
     ;       term(field_actions({varset, term}))
             % A Mercury ground term and its corresponding varset.
@@ -229,6 +234,17 @@
     ;       yyyy_b_dd(string)   % e.g. 2013-Mar-03.
     ;       dd_b_yyyy(string)   % e.g. 03-Mar-2013.
     ;       b_dd_yyyy(string).  % e.g. Mar-03-2013.
+
+
+    % The first string argument specifies how the date components are
+    % separated.
+    % The second string argument specifies how the date and time components
+    % are separated.
+    % The third argument specifies how the time components are separated.
+    % XXX currently all three must be different from each other.
+    %
+:- type date_time_format
+    --->   mm_dd_yyyy_hh_mm(string, string, string). % e.g. 03-24-2013 12:23
 
 %----------------------------------------------------------------------------%
 %

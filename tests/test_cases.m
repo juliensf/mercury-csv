@@ -388,6 +388,16 @@ tests = [
             discard(limited(3)),
             field_desc(string([]), limited(6), do_not_trim_whitespace)
         ]
+    ),
+
+    test_case(
+        test_type_valid,
+        "date_time",
+        no_header,
+        [
+            field_desc(date_time(mm_dd_yyyy_hh_mm("-", " ", ":"), []), no_limit, do_not_trim_whitespace),
+            field_desc(date_time(mm_dd_yyyy_hh_mm("-", " ", ":"), []), no_limit, do_not_trim_whitespace)
+        ]
     )
 ].
 
