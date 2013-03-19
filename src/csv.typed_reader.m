@@ -815,13 +815,81 @@ process_field_apply_actions_univ(UnivHandler, Actions, RawField,
 process_field_maybe(StreamName, LineNo, MaybeFieldType, RawField, FieldNum,
         MaybeResult) :-
     ( if RawField = "" then
-        MaybeResult = pfr_ok(maybe(no))
+        (
+            MaybeFieldType = bool(_, _),
+            MaybeResult = pfr_ok(maybe_bool(no))
+        ;
+            MaybeFieldType = int(_, _),
+            MaybeResult = pfr_ok(maybe_int(no))
+        ;
+            MaybeFieldType = float(_),
+            MaybeResult = pfr_ok(maybe_float(no))
+        ;
+            MaybeFieldType = floatstr(_),
+            MaybeResult = pfr_ok(maybe_floatstr(no))
+        ;
+            MaybeFieldType = string(_),
+            MaybeResult = pfr_ok(maybe_string(no))
+        ;
+            MaybeFieldType = date(_, _),
+            MaybeResult = pfr_ok(maybe_date(no))
+        ;
+            MaybeFieldType = date_time(_, _),
+            MaybeResult = pfr_ok(maybe_date_time(no))
+        ;
+            MaybeFieldType = term(_),
+            unexpected($module, $pred, "NYI maybe_term fields")
+        ;
+            MaybeFieldType = univ(_, _),
+            MaybeResult = pfr_ok(maybe_univ(no))
+        ;
+            MaybeFieldType = maybe(_),
+            unexpected($module, $pred, "nested maybes in field desc")
+        )
     else
         process_field_apply_actions(StreamName, LineNo, MaybeFieldType,
             RawField, FieldNum, MaybeResult0),
         (
             MaybeResult0 = pfr_ok(MaybeValue),
-            MaybeResult = pfr_ok(maybe(yes(MaybeValue)))
+            (
+                MaybeValue = bool(Bool),
+                MaybeResult = pfr_ok(maybe_bool(yes(Bool)))
+            ;
+                MaybeValue = int(Int),
+                MaybeResult = pfr_ok(maybe_int(yes(Int)))
+            ;
+                MaybeValue = float(Float),
+                MaybeResult = pfr_ok(maybe_float(yes(Float)))
+            ;
+                MaybeValue = floatstr(FloatStr),
+                MaybeResult = pfr_ok(maybe_floatstr(yes(FloatStr)))
+            ;
+                MaybeValue = string(String),
+                MaybeResult = pfr_ok(maybe_string(yes(String)))
+            ;
+                MaybeValue = date(Date),
+                MaybeResult = pfr_ok(maybe_date(yes(Date)))
+            ;
+                MaybeValue = date_time(DateTime),
+                MaybeResult = pfr_ok(maybe_date_time(yes(DateTime)))
+            ;
+                MaybeValue = term(_, _),
+                unexpected($module, $pred, "maybe_term NYI")
+            ;
+                MaybeValue = univ(Univ),
+                MaybeResult = pfr_ok(maybe_univ(yes(Univ)))
+            ;
+                ( MaybeValue = maybe_bool(_)
+                ; MaybeValue = maybe_int(_)
+                ; MaybeValue = maybe_float(_)
+                ; MaybeValue = maybe_floatstr(_)
+                ; MaybeValue = maybe_string(_)
+                ; MaybeValue = maybe_date(_)
+                ; MaybeValue = maybe_date_time(_)
+                ; MaybeValue = maybe_univ(_)
+                ),
+                unexpected($module, $pred, "nested maybes in field values")
+            )
         ;
             % This should never occur -- discard is an alternative to a
             % field_desc, and we are already inside a field desc at this

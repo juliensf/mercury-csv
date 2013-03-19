@@ -290,7 +290,14 @@
     ;       date_time(date)
     ;       term(varset, term)
     ;       univ(univ)
-    ;       maybe(maybe(field_value)).
+    ;       maybe_bool(maybe(bool))
+    ;       maybe_int(maybe(int))
+    ;       maybe_float(maybe(float))
+    ;       maybe_floatstr(maybe(string))
+    ;       maybe_string(maybe(string))
+    ;       maybe_date(maybe(date))
+    ;       maybe_date_time(maybe(date))
+    ;       maybe_univ(maybe(univ)).
 
 %----------------------------------------------------------------------------%
 %

@@ -124,8 +124,29 @@ write_field_value(Value, !IO) :-
         Value = univ(Univ),
         io.write(Univ, !IO)
     ;
-        Value = maybe(Maybe),
-        io.write(Maybe, !IO)
+        Value = maybe_bool(MaybeBool),
+        io.write(MaybeBool, !IO)
+    ;
+        Value = maybe_int(MaybeInt),
+        io.write(MaybeInt, !IO)
+    ;
+        Value = maybe_float(MaybeFloat),
+        io.write(MaybeFloat, !IO)
+    ;
+        Value = maybe_floatstr(MaybeFloatStr),
+        io.write(MaybeFloatStr, !IO)
+    ;
+        Value = maybe_string(MaybeString),
+        io.write(MaybeString, !IO)
+    ;
+        Value = maybe_date(MaybeDate),
+        io.write(MaybeDate, !IO)
+    ;
+        Value = maybe_date_time(MaybeDateTime),
+        io.write(MaybeDateTime, !IO)
+    ;
+        Value = maybe_univ(MaybeUniv),
+        io.write(MaybeUniv, !IO)
     ),
     io.write_char(('"'), !IO).
 
