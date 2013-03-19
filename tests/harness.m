@@ -123,6 +123,9 @@ write_field_value(Value, !IO) :-
     ;
         Value = univ(Univ),
         io.write(Univ, !IO)
+    ;
+        Value = maybe(Maybe),
+        io.write(Maybe, !IO)
     ),
     io.write_char(('"'), !IO).
 

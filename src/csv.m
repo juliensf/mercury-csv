@@ -194,10 +194,14 @@
     ;       term(field_actions({varset, term}))
             % A Mercury ground term and its corresponding varset.
 
-    ;       univ(univ_handler, field_actions(univ)).
-            % A Mercury univ value.
+    ;       univ(univ_handler, field_actions(univ))
+            % A Mercury univ/0 value.
             % The user provided "univ_handler" function is responsible for
             % converting the field's string representation into a univ.
+
+    ;       maybe(field_type).
+            % A Mercury maybe/0 value.
+            % A blank field in the CSV data corresponds to maybe.no/0.
     
 :- type field_action(T) == (func(T) = field_action_result(T)).
 :- type field_actions(T) == list(field_action(T)).
@@ -285,7 +289,8 @@
     ;       date(date)
     ;       date_time(date)
     ;       term(varset, term)
-    ;       univ(univ).
+    ;       univ(univ)
+    ;       maybe(maybe(field_value)).
 
 %----------------------------------------------------------------------------%
 %

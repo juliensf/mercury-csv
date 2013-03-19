@@ -373,6 +373,10 @@ process_field_apply_actions(StreamName, LineNo, Type, RawField, FieldNum,
         Type = univ(UnivHandler, Actions),
         process_field_apply_actions_univ(UnivHandler, Actions, RawField,
             FieldNum, MaybeResult)
+    ;
+        Type = maybe(MaybeFieldType),
+        process_field_maybe(StreamName, LineNo, MaybeFieldType, RawField,
+            FieldNum, MaybeResult)
     ).
 
 %----------------------------------------------------------------------------%
@@ -799,6 +803,37 @@ process_field_apply_actions_univ(UnivHandler, Actions, RawField,
         MaybeResult = pfr_error(FieldNum, UnivError)
     ).
 
+%-----------------------------------------------------------------------------%
+%
+% Process maybe fields.
+%
+
+:- pred process_field_maybe(stream.name::in, int::in,
+    field_type::in, raw_field::in, int::in,
+    process_field_result::out) is det.
+
+process_field_maybe(StreamName, LineNo, MaybeFieldType, RawField, FieldNum,
+        MaybeResult) :-
+    ( if RawField = "" then
+        MaybeResult = pfr_ok(maybe(no))
+    else
+        process_field_apply_actions(StreamName, LineNo, MaybeFieldType,
+            RawField, FieldNum, MaybeResult0),
+        (
+            MaybeResult0 = pfr_ok(MaybeValue),
+            MaybeResult = pfr_ok(maybe(yes(MaybeValue)))
+        ;
+            % This should never occur -- discard is an alternative to a
+            % field_desc, and we are already inside a field desc at this
+            % point.
+            MaybeResult0 = pfr_discard,
+            unexpected($module, $pred, "discard encountered")
+        ;
+            MaybeResult0 = pfr_error(_, _),
+            MaybeResult = MaybeResult0
+        )
+    ).
+        
 %-----------------------------------------------------------------------------%
 
 :- pred apply_field_actions(field_actions(T)::in,

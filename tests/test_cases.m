@@ -398,6 +398,16 @@ tests = [
             field_desc(date_time(mm_dd_yyyy_hh_mm("-", " ", ":"), []), no_limit, do_not_trim_whitespace),
             field_desc(date_time(mm_dd_yyyy_hh_mm("-", " ", ":"), []), no_limit, do_not_trim_whitespace)
         ]
+    ),
+
+    test_case(
+        test_type_valid,
+        "maybe",
+        no_header,
+        [
+            field_desc(maybe(int(do_not_allow_floats, [])), no_limit, do_not_trim_whitespace),
+            field_desc(maybe(int(do_not_allow_floats, [])), no_limit, do_not_trim_whitespace)
+        ]
     )
 ].
 
