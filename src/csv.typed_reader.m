@@ -838,7 +838,7 @@ process_field_maybe(StreamName, LineNo, MaybeFieldType, RawField, FieldNum,
             MaybeResult = pfr_ok(maybe_date_time(no))
         ;
             MaybeFieldType = term(_),
-            unexpected($module, $pred, "NYI maybe_term fields")
+            MaybeResult = pfr_ok(maybe_term(no))
         ;
             MaybeFieldType = univ(_, _),
             MaybeResult = pfr_ok(maybe_univ(no))
@@ -873,8 +873,8 @@ process_field_maybe(StreamName, LineNo, MaybeFieldType, RawField, FieldNum,
                 MaybeValue = date_time(DateTime),
                 MaybeResult = pfr_ok(maybe_date_time(yes(DateTime)))
             ;
-                MaybeValue = term(_, _),
-                unexpected($module, $pred, "maybe_term NYI")
+                MaybeValue = term(Varset, Term),
+                MaybeResult = pfr_ok(maybe_term(yes({Varset, Term})))
             ;
                 MaybeValue = univ(Univ),
                 MaybeResult = pfr_ok(maybe_univ(yes(Univ)))
@@ -886,6 +886,7 @@ process_field_maybe(StreamName, LineNo, MaybeFieldType, RawField, FieldNum,
                 ; MaybeValue = maybe_string(_)
                 ; MaybeValue = maybe_date(_)
                 ; MaybeValue = maybe_date_time(_)
+                ; MaybeValue = maybe_term(_)
                 ; MaybeValue = maybe_univ(_)
                 ),
                 unexpected($module, $pred, "nested maybes in field values")

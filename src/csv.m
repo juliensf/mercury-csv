@@ -297,6 +297,7 @@
     ;       maybe_string(maybe(string))
     ;       maybe_date(maybe(date))
     ;       maybe_date_time(maybe(date))
+    ;       maybe_term(maybe({varset, term}))
     ;       maybe_univ(maybe(univ)).
 
 %----------------------------------------------------------------------------%

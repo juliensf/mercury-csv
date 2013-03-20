@@ -24,6 +24,7 @@
 
 :- import_module bool.
 :- import_module list.
+:- import_module maybe.
 :- import_module require.
 :- import_module string.
 
@@ -144,6 +145,15 @@ write_field_value(Value, !IO) :-
     ;
         Value = maybe_date_time(MaybeDateTime),
         io.write(MaybeDateTime, !IO)
+    ;
+        Value = maybe_term(MaybeTerm),
+        (
+            MaybeTerm = yes({_, Term}),
+            io.write(yes(Term), !IO)
+        ;
+            MaybeTerm = no,
+            io.write(MaybeTerm, !IO)
+        )
     ;
         Value = maybe_univ(MaybeUniv),
         io.write(MaybeUniv, !IO)
