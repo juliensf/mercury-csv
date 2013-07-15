@@ -128,7 +128,7 @@
 :- type csv.field_desc
     --->    discard(field_width_limit)
             % The field should be discarded and not returned as part of the
-            % records.  Note if there is a field width limit it will still
+            % records.  Note that if there is a field width limit it will still
             % be enforced even though the field is being discarded.
             %
             % XXX fields in the header for discarded fields currently remain in
@@ -136,7 +136,7 @@
 
     ;       field_desc(
                 field_type :: field_type,
-                % What type of Mercury value does this field represent.  Also,
+                % What type of Mercury value does this field represent?  Also,
                 % any details of any optional checking or transformation that
                 % should be performed on the field value.
 
@@ -174,8 +174,7 @@
             % The field represents a float value, but we return it as Mercury
             % string.
             % NOTE: after applying any user actions the value is check again.
-            % An error returned if the string no long represents a float.
-            % is till a float.
+            % An error returned if the string no longer represents a float.
 
     ;       string(field_actions(string))
             % A Mercury string.

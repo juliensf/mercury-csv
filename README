@@ -51,7 +51,7 @@ says to install the library in /foo/bar
 TESTING
 -------
 
-To run the regress test suite, do:
+To run the regression test suite, do:
 
     $ make runtests
 
