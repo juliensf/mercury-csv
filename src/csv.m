@@ -228,7 +228,7 @@
             % Use the provided function to convert the float into an int.
 
     % This type specifies the date formats that are accepted by the reader.
-    % The string arugment specifies how the date components are separated.
+    % The string argument specifies how the date components are separated.
     %
 :- type date_format
     --->    yyyy_mm_dd(string)  % e.g. 2013-03-06.
@@ -563,7 +563,7 @@ get_max_field_width(HeaderDesc, FieldDescs) = MaxWidth :-
         FieldDescs = [],
         ( 
             HeaderDesc = no_header,  
-            unexpected($module, $pred, "no fields and no header")
+            unexpected($file, $pred, "no fields and no header")
         ;
             % What return here will not matter since the field width limit
             % will change once some fields are actually added.

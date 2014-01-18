@@ -183,7 +183,7 @@ get_header(Reader, Result, !State) :-
     HeaderDesc = Reader ^ csv_header_desc,
     (
         HeaderDesc = no_header,
-        unexpected($module, $pred, "CSV desc specifies no header")
+        unexpected($file, $pred, "CSV desc specifies no header")
     ;
         HeaderDesc = header_desc(_),
         stream.get_line(get_stream(Reader), LineNo, !State),
@@ -271,9 +271,9 @@ get_record(Reader, Result, !State) :-
 
 process_fields(_, _, [], [], _, FieldValues, prr_ok(FieldValues)).
 process_fields(_, _, [_ | _], [], _, _, _) :-
-    unexpected($module, $pred, "argument length mismatch").
+    unexpected($file, $pred, "argument length mismatch").
 process_fields(_, _, [], [_ | _], _, _, _) :-
-    unexpected($module, $pred, "argument length mimsatch").
+    unexpected($file, $pred, "argument length mismatch").
 process_fields(StreamName, LineNo, [Desc | Descs], [RawField | RawFields],
         FieldNum, FieldValues, MaybeResult) :-
     process_field(StreamName, LineNo, Desc, RawField, FieldNum,
@@ -844,7 +844,7 @@ process_field_maybe(StreamName, LineNo, MaybeFieldType, RawField, FieldNum,
             MaybeResult = pfr_ok(maybe_univ(no))
         ;
             MaybeFieldType = maybe(_),
-            unexpected($module, $pred, "nested maybes in field desc")
+            unexpected($file, $pred, "nested maybes in field desc")
         )
     else
         process_field_apply_actions(StreamName, LineNo, MaybeFieldType,
@@ -889,14 +889,14 @@ process_field_maybe(StreamName, LineNo, MaybeFieldType, RawField, FieldNum,
                 ; MaybeValue = maybe_term(_)
                 ; MaybeValue = maybe_univ(_)
                 ),
-                unexpected($module, $pred, "nested maybes in field values")
+                unexpected($file, $pred, "nested maybes in field values")
             )
         ;
             % This should never occur -- discard is an alternative to a
             % field_desc, and we are already inside a field desc at this
             % point.
             MaybeResult0 = pfr_discard,
-            unexpected($module, $pred, "discard encountered")
+            unexpected($file, $pred, "discard encountered")
         ;
             MaybeResult0 = pfr_error(_, _),
             MaybeResult = MaybeResult0

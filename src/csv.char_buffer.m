@@ -35,7 +35,7 @@
 
     % XXX this could be much more efficient if we implemented it directly
     % as code in the target language.
-    % NOTE: if we do so, we should use the maximum field width, if availble
+    % NOTE: if we do so, we should use the maximum field width, if available
     % to initialise the buffer.
     %
 :- type char_buffer_rep
