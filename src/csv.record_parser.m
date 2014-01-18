@@ -95,7 +95,7 @@ get_client_field_delimiter(client_raw_reader(R)) = R ^ csv_raw_delimiter.
 get_next_record(Reader, Result, !State) :-
     get_fields(Reader, [], Result, last_seen_start, _, 0, _NumFields, !State).
 
-:- pred get_fields(client(Stream)::in, list(string)::in,
+:- pred get_fields(client(Stream)::in, raw_fields::in,
     record_result(Error)::out,
     last_seen::in, last_seen::out,
     int::in, int::out,
@@ -156,9 +156,8 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !State) :-
 % Reading raw fields.
 %
 
-
 :- type field_result(Error)
-    --->    fr_field(string)
+    --->    fr_field(raw_field)
     ;       fr_error(csv.error(Error))
     ;       fr_end_of_record
     ;       fr_eof.
@@ -182,7 +181,8 @@ next_raw_field(Reader, FieldNum, FieldResult, !LastSeen, !State) :-
             ( if !.LastSeen = last_seen_delimiter then
                 stream.unget(Stream, '\n', !State),
                 !:LastSeen = last_seen_other,
-                FieldResult = fr_field("")
+                Field = raw_field(""),
+                FieldResult = fr_field(Field)
             else
                 FieldResult = fr_end_of_record
             )
@@ -191,7 +191,8 @@ next_raw_field(Reader, FieldNum, FieldResult, !LastSeen, !State) :-
             Char = get_client_field_delimiter(Reader)
         then 
             !:LastSeen = last_seen_delimiter,
-            FieldResult = fr_field("")
+            Field = raw_field(""),
+            FieldResult = fr_field(Field)
         else if
             Char = ('"')
         then
@@ -242,14 +243,16 @@ next_quoted_field(Reader, FieldNum, Buffer, Result, !LastSeen, !State) :-
                     NextChar = get_client_field_delimiter(Reader)
                 then
                     !:LastSeen = last_seen_delimiter,
-                    Field = char_buffer.to_string(Buffer, !.State),
+                    FieldValue = char_buffer.to_string(Buffer, !.State),
+                    Field = raw_field(FieldValue),
                     Result = fr_field(Field)
                 else if
                     NextChar = ('\n')
                 then
                     !:LastSeen = last_seen_other,
                     stream.unget(Stream, '\n', !State),
-                    Field = char_buffer.to_string(Buffer, !.State),
+                    FieldValue = char_buffer.to_string(Buffer, !.State),
+                    Field = raw_field(FieldValue),
                     Result = fr_field(Field)
                 else if
                     NextChar = ('\r')
@@ -259,7 +262,8 @@ next_quoted_field(Reader, FieldNum, Buffer, Result, !LastSeen, !State) :-
                         AfterCR_Result = ok(AfterCR_Char),
                         ( if AfterCR_Char = ('\n') then
                             stream.unget(Stream, '\n', !State),
-                            Field = char_buffer.to_string(Buffer, !.State),
+                            FieldValue = char_buffer.to_string(Buffer, !.State),
+                            Field = raw_field(FieldValue),
                             Result = fr_field(Field)
                         else
                             stream.name(Stream, Name, !State),
@@ -298,14 +302,15 @@ next_quoted_field(Reader, FieldNum, Buffer, Result, !LastSeen, !State) :-
                 % This might be the last field in the file, so don't expect a
                 % newline.
                 NextGetResult = eof,
-                Field = char_buffer.to_string(Buffer, !.State),
+                FieldValue = char_buffer.to_string(Buffer, !.State),
+                Field = raw_field(FieldValue),
                 Result = fr_field(Field)
             ;
                 NextGetResult = error(Error),
                 Result = fr_error(stream_error(Error))
             )
         else 
-            % NOTE; quoted delimiter characters do not count has having
+            % NOTE: quoted delimiter characters do not count has having
             % seen a delimter.
             !:LastSeen = last_seen_other,
             add(Buffer, Char, !State),
@@ -355,7 +360,8 @@ next_unquoted_field(Reader, FieldNum, Buffer, Result, !LastSeen, !State) :-
             Char = get_client_field_delimiter(Reader)
         then
             !:LastSeen = last_seen_delimiter,
-            Field = char_buffer.to_string(Buffer, !.State),
+            FieldValue = char_buffer.to_string(Buffer, !.State),
+            Field = raw_field(FieldValue),
             Result = fr_field(Field)
         else if 
             Char = ('"')
@@ -370,7 +376,8 @@ next_unquoted_field(Reader, FieldNum, Buffer, Result, !LastSeen, !State) :-
             !:LastSeen = last_seen_other,
             stream.unget(Stream, '\n', !State),
             chomp_cr(Buffer, !State),
-            Field = char_buffer.to_string(Buffer, !.State),
+            FieldValue = char_buffer.to_string(Buffer, !.State),
+            Field = raw_field(FieldValue),
             Result = fr_field(Field)
         else
             !:LastSeen = last_seen_other,
@@ -398,7 +405,8 @@ next_unquoted_field(Reader, FieldNum, Buffer, Result, !LastSeen, !State) :-
     ;
         % This might be the end of the file
         GetResult = eof,
-        Field = char_buffer.to_string(Buffer, !.State),
+        FieldValue = char_buffer.to_string(Buffer, !.State),
+        Field = raw_field(FieldValue),
         Result = fr_field(Field)
     ;
         GetResult = error(Error),

@@ -424,7 +424,10 @@
                 raw_record_field   :: raw_fields
             ).
 
-:- type csv.raw_field == string.
+:- type csv.raw_field
+    --->    raw_field(
+                raw_field_value :: string
+            ).
 
 :- type csv.raw_fields == list(csv.raw_field).
 

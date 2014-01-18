@@ -197,7 +197,9 @@ get_header(Reader, Result, !State) :-
             compare(CmpResult, NumHeaderFields, NumFields),
             (
                 CmpResult = (=),
-                Header = header(HeaderFields),
+                HeaderFieldValues = list.map((func(F) = F ^ raw_field_value),
+                    HeaderFields),
+                Header = header(HeaderFieldValues),
                 Result = ok(Header)
             ;
                 ( CmpResult = (>)
@@ -301,7 +303,7 @@ process_field(_, _, Desc, RawField, FieldNum, MaybeResult) :-
         MaybeResult = pfr_discard
     ;
         MaybeWidthLimit = limited(Limit),
-        string.length(RawField, RawFieldLength),
+        string.length(RawField ^ raw_field_value, RawFieldLength),
         ( if RawFieldLength > Limit
         then MaybeResult = pfr_error(FieldNum, "field width exceeded")
         else MaybeResult = pfr_discard
@@ -312,7 +314,7 @@ process_field(StreamName, LineNo, Desc, RawField, FieldNum, MaybeResult) :-
     Desc = field_desc(Type, MaybeWidthLimit, TrimWS),
     (
         TrimWS = trim_whitespace,
-        RawFieldPrime = string.strip(RawField)
+        RawFieldPrime = raw_field(string.strip(RawField ^ raw_field_value))
     ;
         TrimWS = do_not_trim_whitespace,
         RawFieldPrime = RawField
@@ -323,7 +325,7 @@ process_field(StreamName, LineNo, Desc, RawField, FieldNum, MaybeResult) :-
             RawFieldPrime, FieldNum, MaybeResult)
     ;
         MaybeWidthLimit = limited(Limit),
-        string.length(RawFieldPrime, RawFieldLength),
+        string.length(RawFieldPrime ^ raw_field_value, RawFieldLength),
         ( if RawFieldLength > Limit then
             MaybeResult = pfr_error(FieldNum, "field width exceeded")
         else
@@ -390,7 +392,7 @@ process_field_apply_actions(StreamName, LineNo, Type, RawField, FieldNum,
 
 process_field_apply_actions_bool(BoolHandler, Actions, RawField,
         FieldNum, MaybeResult) :-
-    MaybeField = BoolHandler(RawField),
+    MaybeField = BoolHandler(RawField ^ raw_field_value),
     (
         MaybeField = ok(Bool),
         apply_field_actions(Actions, Bool, ActionResult),
@@ -417,7 +419,7 @@ process_field_apply_actions_bool(BoolHandler, Actions, RawField,
 
 process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
         FieldNum, MaybeResult) :-
-    ( if string.to_int(RawField, Int) then
+    ( if string.to_int(RawField ^ raw_field_value, Int) then
         apply_field_actions(Actions, Int, ActionResult),
         (
             ActionResult = ok(IntPrime),
@@ -432,7 +434,7 @@ process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
             MaybeResult = pfr_error(FieldNum, "not an integer field")
         ;
             FloatIntHandler = convert_float_to_int(FloatToIntFunc),
-            ( if string.to_float(RawField, Float) then
+            ( if string.to_float(RawField ^ raw_field_value, Float) then
                 Int = FloatToIntFunc(Float),
                 apply_field_actions(Actions, Int, ActionResult),
                 (
@@ -458,7 +460,7 @@ process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
     raw_field::in, int::in, process_field_result::out) is det.
 
 process_field_apply_actions_float(Actions, RawField, FieldNum, MaybeResult) :-
-    ( if string.to_float(RawField, Float) then
+    ( if string.to_float(RawField ^ raw_field_value, Float) then
         apply_field_actions(Actions, Float, ActionResult),
         (
             ActionResult = ok(FloatPrime),
@@ -484,8 +486,8 @@ process_field_apply_actions_floatstr(Actions, RawField, FieldNum,
     % XXX we should just check that the float matches a valid
     % float or double literal rather than attempting to convert
     % it because in the spf grades we may not be able to convert it.
-    ( if string.to_float(RawField, _) then
-        apply_field_actions(Actions, RawField, ActionResult),
+    ( if string.to_float(RawField ^ raw_field_value, _) then
+        apply_field_actions(Actions, RawField ^ raw_field_value, ActionResult),
         (
             ActionResult = ok(RawFieldPrime),
             % Check that the resulting string is still a float
@@ -512,7 +514,7 @@ process_field_apply_actions_floatstr(Actions, RawField, FieldNum,
 
 process_field_apply_actions_string(Actions, RawField, FieldNum,
         MaybeResult) :-
-    apply_field_actions(Actions, RawField, ActionResult),
+    apply_field_actions(Actions, RawField ^ raw_field_value, ActionResult),
     (
         ActionResult = ok(String),
         MaybeResult = pfr_ok(string(String))
@@ -551,7 +553,7 @@ process_field_apply_actions_date(Format, Actions, RawField, FieldNum,
         Format = b_dd_yyyy(Separator),
         ConvertPred = b_dd_yyyy_to_date
     ),
-    convert_date(ConvertPred, Separator, RawField, MaybeDate),
+    convert_date(ConvertPred, Separator, RawField ^ raw_field_value, MaybeDate),
     (
         MaybeDate = ok(DateTime),
         apply_field_actions(Actions, DateTime, ActionResult),
@@ -695,7 +697,8 @@ process_field_apply_actions_date_time(Format, Actions, RawField, FieldNum,
     else
         true
     ),
-    DateTimeComponentStrs = string.split_at_string(DateTimeSep, RawField),
+    DateTimeComponentStrs = string.split_at_string(DateTimeSep,
+        RawField ^ raw_field_value),
     ( if
         mm_dd_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
             DateTime)
@@ -738,7 +741,8 @@ mm_dd_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
 
 process_field_apply_actions_term(StreamName, LineNo, Actions, RawField,
         FieldNum, MaybeResult) :-
-    parser.read_term_from_string(StreamName, RawField, _EndPos, ReadTerm),
+    parser.read_term_from_string(StreamName, RawField ^ raw_field_value,
+        _EndPos, ReadTerm),
     (
         ReadTerm = term(Varset, Term0),
         % XXX fix up the line number in the context so it matches that
@@ -787,7 +791,7 @@ process_field_apply_actions_term(StreamName, LineNo, Actions, RawField,
 
 process_field_apply_actions_univ(UnivHandler, Actions, RawField,
         FieldNum, MaybeResult) :-
-    MaybeField = UnivHandler(RawField),
+    MaybeField = UnivHandler(RawField ^ raw_field_value),
     (
         MaybeField = ok(Univ),
         apply_field_actions(Actions, Univ, ActionResult),
@@ -814,7 +818,7 @@ process_field_apply_actions_univ(UnivHandler, Actions, RawField,
 
 process_field_maybe(StreamName, LineNo, MaybeFieldType, RawField, FieldNum,
         MaybeResult) :-
-    ( if RawField = "" then
+    ( if RawField ^ raw_field_value = "" then
         (
             MaybeFieldType = bool(_, _),
             MaybeResult = pfr_ok(maybe_bool(no))
