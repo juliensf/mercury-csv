@@ -427,8 +427,9 @@
 
 :- type csv.raw_field
     --->    raw_field(
-                raw_field_value  :: string,
-                raw_field_col_no :: int
+                raw_field_value   :: string,
+                raw_field_line_no :: int,
+                raw_field_col_no  :: int
             ).
 
 :- type csv.raw_fields == list(csv.raw_field).

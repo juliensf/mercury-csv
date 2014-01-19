@@ -1,1 +1,1 @@
-header_eof.inp:1: error: in field #2, expected 3 fields in header: actual 2
+header_eof.inp:1:1: error: in field #2, expected 3 fields in header: actual 2

@@ -108,8 +108,12 @@ get_next_record(Reader, Result, !State) :-
 
 get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
     NextFieldNum = !.FieldsRead + 1,
-    next_raw_field(Reader, NextFieldNum, FieldResult, !LastSeen, !ColNo, !State),
+    stream.get_line(Stream, StartLineNo, !State),
+    next_raw_field(Reader, StartLineNo, NextFieldNum, FieldResult, !LastSeen,
+        !ColNo, !State),
     Stream = get_client_stream(Reader),
+    % NOTE: LineNo is not necessarily the same as StartLineNo since quoted fields
+    % can contain newlines.
     stream.get_line(Stream, LineNo, !State),
     (
         FieldResult = fr_field(Field),
@@ -165,7 +169,7 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
     ;       fr_end_of_record
     ;       fr_eof.
 
-:- pred next_raw_field(client(Stream)::in, int::in,
+:- pred next_raw_field(client(Stream)::in, int::in, int::in,
     field_result(Error)::out, last_seen::in, last_seen::out,
     int::in, int::out, State::di, State::uo) is det
     <= (
@@ -173,7 +177,8 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
         stream.putback(Stream, char, State, Error)
     ).
 
-next_raw_field(Reader, FieldNum, FieldResult, !LastSeen, !ColNo, !State) :-
+next_raw_field(Reader, StartLineNo, FieldNum, FieldResult, !LastSeen,
+        !ColNo, !State) :-
     Stream = get_client_stream(Reader),
     stream.get(Stream, GetResult, !State),
     (
@@ -185,7 +190,7 @@ next_raw_field(Reader, FieldNum, FieldResult, !LastSeen, !ColNo, !State) :-
             ( if !.LastSeen = last_seen_delimiter then
                 stream.unget(Stream, '\n', !State),
                 !:LastSeen = last_seen_other,
-                Field = raw_field("", !.ColNo),
+                Field = raw_field("", StartLineNo, !.ColNo),
                 FieldResult = fr_field(Field)
             else
                 FieldResult = fr_end_of_record
@@ -195,20 +200,20 @@ next_raw_field(Reader, FieldNum, FieldResult, !LastSeen, !ColNo, !State) :-
             Char = get_client_field_delimiter(Reader)
         then 
             !:LastSeen = last_seen_delimiter,
-            Field = raw_field("", !.ColNo),
+            Field = raw_field("", StartLineNo, !.ColNo),
             FieldResult = fr_field(Field)
         else if
             Char = ('"')
         then
             !:LastSeen = last_seen_other,
             char_buffer.init(Buffer, !State),
-            next_quoted_field(Reader, !.ColNo, FieldNum, Buffer,
-                FieldResult, !LastSeen, !ColNo, !State)
+            next_quoted_field(Reader, StartLineNo, !.ColNo, FieldNum,
+                Buffer, FieldResult, !LastSeen, !ColNo, !State)
         else
             char_buffer.init(Buffer, !State),
             char_buffer.add(Buffer, Char, !State),
-            next_unquoted_field(Reader, !.ColNo, FieldNum, Buffer,
-                FieldResult, !LastSeen, !ColNo, !State)
+            next_unquoted_field(Reader, StartLineNo, !.ColNo, FieldNum,
+                Buffer, FieldResult, !LastSeen, !ColNo, !State)
         )
     ;
         GetResult = eof,
@@ -218,7 +223,7 @@ next_raw_field(Reader, FieldNum, FieldResult, !LastSeen, !ColNo, !State) :-
         FieldResult = fr_error(stream_error(Error))
     ).
 
-:- pred next_quoted_field(client(Stream)::in, int::in,
+:- pred next_quoted_field(client(Stream)::in, int::in, int::in,
     int::in, char_buffer::in, field_result(Error)::out,
     last_seen::in, last_seen::out, int::in, int::out,
     State::di, State::uo) is det
@@ -227,8 +232,8 @@ next_raw_field(Reader, FieldNum, FieldResult, !LastSeen, !ColNo, !State) :-
         stream.putback(Stream, char, State, Error)
     ).
 
-next_quoted_field(Reader, StartColNo, FieldNum, Buffer, Result,
-        !LastSeen, !ColNo, !State) :-
+next_quoted_field(Reader, StartLineNo, StartColNo, FieldNum, Buffer,
+        Result, !LastSeen, !ColNo, !State) :-
     Stream = get_client_stream(Reader),
     stream.get(Stream, GetResult, !State),
     (
@@ -245,14 +250,14 @@ next_quoted_field(Reader, StartColNo, FieldNum, Buffer, Result,
                 then
                     add(Buffer, Char, !State),
                     !:LastSeen = last_seen_other,
-                    next_quoted_field(Reader, StartColNo, FieldNum, Buffer,
-                        Result, !LastSeen, !ColNo, !State)
+                    next_quoted_field(Reader, StartLineNo, StartColNo, FieldNum,
+                        Buffer, Result, !LastSeen, !ColNo, !State)
                 else if
                     NextChar = get_client_field_delimiter(Reader)
                 then
                     !:LastSeen = last_seen_delimiter,
                     FieldValue = char_buffer.to_string(Buffer, !.State),
-                    Field = raw_field(FieldValue, StartColNo),
+                    Field = raw_field(FieldValue, StartLineNo, StartColNo),
                     Result = fr_field(Field)
                 else if
                     NextChar = ('\n')
@@ -260,7 +265,7 @@ next_quoted_field(Reader, StartColNo, FieldNum, Buffer, Result,
                     !:LastSeen = last_seen_other,
                     stream.unget(Stream, '\n', !State),
                     FieldValue = char_buffer.to_string(Buffer, !.State),
-                    Field = raw_field(FieldValue, StartColNo),
+                    Field = raw_field(FieldValue, StartLineNo, StartColNo),
                     Result = fr_field(Field)
                 else if
                     NextChar = ('\r')
@@ -271,15 +276,15 @@ next_quoted_field(Reader, StartColNo, FieldNum, Buffer, Result,
                         ( if AfterCR_Char = ('\n') then
                             stream.unget(Stream, '\n', !State),
                             FieldValue = char_buffer.to_string(Buffer, !.State),
-                            Field = raw_field(FieldValue, StartColNo),
+                            Field = raw_field(FieldValue, StartLineNo,
+                                StartColNo),
                             Result = fr_field(Field)
                         else
                             increment_col_no(!ColNo),
                             stream.name(Stream, Name, !State),
-                            stream.get_line(Stream, LineNo, !State),
                             Error = csv_error(
                                 Name,
-                                LineNo,
+                                StartLineNo,
                                 StartColNo,
                                 FieldNum,
                                 "missing closing quote"
@@ -299,10 +304,9 @@ next_quoted_field(Reader, StartColNo, FieldNum, Buffer, Result,
                     )
                 else
                     stream.name(Stream, Name, !State),
-                    stream.get_line(Stream, LineNo, !State),
                     Error = csv_error(
                         Name,
-                        LineNo,
+                        StartLineNo,
                         StartColNo,
                         FieldNum,
                         "missing closing quote"
@@ -314,7 +318,7 @@ next_quoted_field(Reader, StartColNo, FieldNum, Buffer, Result,
                 % newline.
                 NextGetResult = eof,
                 FieldValue = char_buffer.to_string(Buffer, !.State),
-                Field = raw_field(FieldValue, StartColNo),
+                Field = raw_field(FieldValue, StartLineNo, StartColNo),
                 Result = fr_field(Field)
             ;
                 NextGetResult = error(Error),
@@ -325,31 +329,31 @@ next_quoted_field(Reader, StartColNo, FieldNum, Buffer, Result,
             % seen a delimter.
             !:LastSeen = last_seen_other,
             add(Buffer, Char, !State),
+            % Reset the column number if we see a newline.
+            ( if Char = ('\n') then !:ColNo = 0 else true ),
             MaybeFieldWidthLimit = get_client_field_width(Reader),
             (
                 MaybeFieldWidthLimit = no_limit,
-                next_quoted_field(Reader, StartColNo, FieldNum, Buffer,
-                    Result, !LastSeen, !ColNo, !State)
+                next_quoted_field(Reader, StartLineNo, StartColNo, FieldNum,
+                    Buffer, Result, !LastSeen, !ColNo, !State)
             ;
                 MaybeFieldWidthLimit = limited(Limit),
                 NumChars = char_buffer.num_chars(Buffer, !.State),
                 ( if NumChars > Limit then
                     stream.name(Stream, Name, !State),
-                    stream.get_line(Stream, LineNo, !State),
-                    Error = csv_error(Name, LineNo, !.ColNo, FieldNum,
+                    Error = csv_error(Name, StartLineNo, StartColNo, FieldNum,
                         "field width limit exceeded"),
                     Result = fr_error(Error)
                 else
-                    next_quoted_field(Reader, StartColNo, FieldNum, Buffer,
-                        Result, !LastSeen, !ColNo, !State)
+                    next_quoted_field(Reader, StartLineNo, StartColNo, FieldNum,
+                        Buffer, Result, !LastSeen, !ColNo, !State)
                 )
             )
         )
     ;
         GetResult = eof,
         stream.name(Stream, Name, !State),
-        stream.get_line(Stream, LineNo, !State),
-        Error = csv_error(Name, LineNo, StartColNo, FieldNum,
+        Error = csv_error(Name, StartLineNo, StartColNo, FieldNum,
              "missing closing quote"),
         Result = fr_error(Error)
     ; 
@@ -357,7 +361,7 @@ next_quoted_field(Reader, StartColNo, FieldNum, Buffer, Result,
         Result = fr_error(stream_error(Error))
     ).
 
-:- pred next_unquoted_field(client(Stream)::in, int::in,
+:- pred next_unquoted_field(client(Stream)::in, int::in, int::in,
     int::in, char_buffer::in, field_result(Error)::out, 
     last_seen::in, last_seen::out, int::in, int::out,
     State::di, State::uo) is det
@@ -366,8 +370,8 @@ next_quoted_field(Reader, StartColNo, FieldNum, Buffer, Result,
         stream.putback(Stream, char, State, Error)
     ).
 
-next_unquoted_field(Reader, StartColNo, FieldNum, Buffer, Result, !LastSeen,
-        !ColNo, !State) :-
+next_unquoted_field(Reader, StartLineNo, StartColNo, FieldNum, Buffer,
+        Result, !LastSeen, !ColNo, !State) :-
     Stream = get_client_stream(Reader),
     stream.get(Stream, GetResult, !State),
     (
@@ -378,7 +382,7 @@ next_unquoted_field(Reader, StartColNo, FieldNum, Buffer, Result, !LastSeen,
         then
             !:LastSeen = last_seen_delimiter,
             FieldValue = char_buffer.to_string(Buffer, !.State),
-            Field = raw_field(FieldValue, StartColNo),
+            Field = raw_field(FieldValue, StartLineNo, StartColNo),
             Result = fr_field(Field)
         else if 
             Char = ('"')
@@ -394,7 +398,7 @@ next_unquoted_field(Reader, StartColNo, FieldNum, Buffer, Result, !LastSeen,
             stream.unget(Stream, '\n', !State),
             chomp_cr(Buffer, !State),
             FieldValue = char_buffer.to_string(Buffer, !.State),
-            Field = raw_field(FieldValue, StartColNo),
+            Field = raw_field(FieldValue, StartLineNo, StartColNo),
             Result = fr_field(Field)
         else
             !:LastSeen = last_seen_other,
@@ -402,8 +406,8 @@ next_unquoted_field(Reader, StartColNo, FieldNum, Buffer, Result, !LastSeen,
             MaybeFieldWidthLimit = get_client_field_width(Reader),
             (
                 MaybeFieldWidthLimit = no_limit,
-                next_unquoted_field(Reader, StartColNo, FieldNum, Buffer,
-                    Result, !LastSeen, !ColNo, !State)
+                next_unquoted_field(Reader, StartLineNo, StartColNo, FieldNum,
+                    Buffer, Result, !LastSeen, !ColNo, !State)
             ;
                 MaybeFieldWidthLimit = limited(Limit),
                 NumChars = char_buffer.num_chars(Buffer, !.State),
@@ -414,8 +418,8 @@ next_unquoted_field(Reader, StartColNo, FieldNum, Buffer, Result, !LastSeen,
                         "field width exceeded"),
                     Result = fr_error(Error)
                 else
-                    next_unquoted_field(Reader, StartColNo, FieldNum, Buffer,
-                        Result, !LastSeen, !ColNo, !State)
+                    next_unquoted_field(Reader, StartLineNo, StartColNo, FieldNum,
+                        Buffer, Result, !LastSeen, !ColNo, !State)
                 )
             )
         )
@@ -423,7 +427,7 @@ next_unquoted_field(Reader, StartColNo, FieldNum, Buffer, Result, !LastSeen,
         % This might be the end of the file
         GetResult = eof,
         FieldValue = char_buffer.to_string(Buffer, !.State),
-        Field = raw_field(FieldValue, StartColNo),
+        Field = raw_field(FieldValue, StartLineNo, StartColNo),
         Result = fr_field(Field)
     ;
         GetResult = error(Error),

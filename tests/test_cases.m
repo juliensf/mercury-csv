@@ -134,6 +134,17 @@ tests = [
             field_desc(string([]), no_limit, do_not_trim_whitespace)
         ]
     ),
+    
+    test_case(
+        test_type_invalid,
+        "regression4-bad",
+        no_header,
+        [
+            field_desc(string([]), no_limit, do_not_trim_whitespace),
+            field_desc(string([]), limited(2), do_not_trim_whitespace),
+            field_desc(string([]), limited(2), do_not_trim_whitespace)
+        ]
+    ),
 
     test_case(
         test_type_valid,
