@@ -161,12 +161,14 @@ run_test_valid(OptionTable, Name, HeaderDesc, RecordDesc,
                         io.format("ABORTED (stream error: %s)\n",
                             [s(Msg)]), !IO)
                 ;
-                    ProcessCSV_Error = csv_error(StreamName, LineNo, FieldNo, Msg),
+                    ProcessCSV_Error = csv_error(StreamName, LineNo, ColNo,
+                        FieldNo, Msg),
                     ErrFileName = Name ++ ".err",
                     io.open_output(ErrFileName, ErrFileResult, !IO),
                     (
                         ErrFileResult = ok(ErrFile),
-                        write_csv_error(ErrFile, StreamName, LineNo, FieldNo, Msg, !IO),
+                        write_csv_error(ErrFile, StreamName, LineNo, ColNo,
+                            FieldNo, Msg, !IO),
                         io.close_output(ErrFile, !IO),
                         add_failed_test(Name, !Results),
                         maybe_verbose(OptionTable,
@@ -217,12 +219,14 @@ run_test_invalid(OptionTable, Name, HeaderDesc, RecordDesc,
                         io.format("ABORTED (stream error: %s)\n",
                             [s(Msg)]), !IO)
                 ;
-                    ProcessCSV_Error = csv_error(StreamName, LineNo, FieldNo, Msg),
+                    ProcessCSV_Error = csv_error(StreamName, LineNo, ColNo,
+                        FieldNo, Msg),
                     ErrFileName = Name ++ ".err",
                     io.open_output(ErrFileName, ErrFileResult, !IO),
                     (
                         ErrFileResult = ok(ErrFile),
-                        write_csv_error(ErrFile, StreamName, LineNo, FieldNo, Msg, !IO),
+                        write_csv_error(ErrFile, StreamName, LineNo, ColNo,
+                            FieldNo, Msg, !IO),
                         io.close_output(ErrFile, !IO),
                         ExpErrFileName = Name ++ ".err_exp",
                         ResFileName = Name ++ ".res",
@@ -431,11 +435,11 @@ bad_cmdline(Msg, !IO) :-
 %-----------------------------------------------------------------------------%
 
 :- pred write_csv_error(io.text_output_stream::in, string::in,
-    int::in, int::in, string::in, io::di, io::uo) is det.
+    int::in, int::in, int::in, string::in, io::di, io::uo) is det.
 
-write_csv_error(File, Name, LineNo, FieldNo, Msg, !IO) :-
-    io.format(File, "%s:%d: error: in field #%d, %s\n",
-        [s(Name), i(LineNo), i(FieldNo), s(Msg)], !IO).
+write_csv_error(File, Name, LineNo, ColNo, FieldNo, Msg, !IO) :-
+    io.format(File, "%s:%d:%d: error: in field #%d, %s\n",
+        [s(Name), i(LineNo), i(ColNo), i(FieldNo), s(Msg)], !IO).
             
 %-----------------------------------------------------------------------------%
 

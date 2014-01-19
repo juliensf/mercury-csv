@@ -45,6 +45,7 @@ process_csv(Reader, OutFile, Result, !IO) :-
                 Name,
                 LineNo,
                 1,
+                1,
                 "unexpected EOF in header"
             ),
             Result = error(HeaderError) 

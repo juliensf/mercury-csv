@@ -45,6 +45,7 @@
     ;       csv_error(
                 csv_err_name  :: string,
                 csv_err_line  :: int,
+                csv_err_col   :: int,
                 csv_err_field :: int,
                 csv_err_msg   :: string
             ).
@@ -426,7 +427,8 @@
 
 :- type csv.raw_field
     --->    raw_field(
-                raw_field_value :: string
+                raw_field_value  :: string,
+                raw_field_col_no :: int
             ).
 
 :- type csv.raw_fields == list(csv.raw_field).
@@ -493,9 +495,9 @@ make_error_message(Error) = Msg :-
         Error = stream_error(StreamError),
         Msg = stream.error_message(StreamError)
     ;
-        Error = csv_error(Name, LineNo, FieldNo, CSV_Msg),
-        string.format("%s:%d: error: in field #%d, %s",
-            [s(Name), i(LineNo), i(FieldNo), s(CSV_Msg)], Msg)
+        Error = csv_error(Name, LineNo, ColNo, FieldNo, CSV_Msg),
+        string.format("%s:%d:%d: error: in field #%d, %s",
+            [s(Name), i(LineNo), i(ColNo), i(FieldNo), s(CSV_Msg)], Msg)
     ).
 
 %----------------------------------------------------------------------------%

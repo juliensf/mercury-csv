@@ -1,1 +1,1 @@
-unmatched_quote2.inp:1: error: in field #1, missing closing quote
+unmatched_quote2.inp:1:1: error: in field #1, missing closing quote

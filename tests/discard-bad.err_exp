@@ -1,1 +1,1 @@
-discard-bad.inp:1: error: in field #2, field width exceeded
+discard-bad.inp:1:5: error: in field #2, field width exceeded

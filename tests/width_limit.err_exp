@@ -1,1 +1,1 @@
-width_limit.inp:1: error: in field #2, field width exceeded
+width_limit.inp:1:5: error: in field #2, field width exceeded

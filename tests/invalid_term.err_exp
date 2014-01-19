@@ -1,1 +1,1 @@
-invalid_term.inp:1: error: in field #1, Syntax error: unexpected end-of-file at start of sub-term
+invalid_term.inp:1:1: error: in field #1, Syntax error: unexpected end-of-file at start of sub-term
