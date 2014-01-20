@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013 Julien Fischer.
+% Copyright (C) 2013-2014 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 %
@@ -35,6 +35,10 @@
 % CSV errors.
 %
 
+:- type csv.line_number == int.
+:- type csv.column_number == int.
+:- type csv.field_number == int.
+
     % This type describes errors that can occur while processing a CSV
     % stream.
     %
@@ -43,10 +47,10 @@
             % An error has occurred in the underlying character stream.
             
     ;       csv_error(
-                csv_err_name  :: string,
-                csv_err_line  :: int,
-                csv_err_col   :: int,
-                csv_err_field :: int,
+                csv_err_name  :: stream.name,
+                csv_err_line  :: csv.line_number,
+                csv_err_col   :: csv.column_number,
+                csv_err_field :: csv.field_number,
                 csv_err_msg   :: string
             ).
             % There is an error in the structure of the CSV file or
@@ -274,8 +278,8 @@
     %
 :- type csv.record
     --->    record(
-                record_line_no ::int, 
-                record_fields  :: list(field_value)
+                record_line_no :: line_number,
+                record_fields  :: field_values
             ).
 
 :- type csv.records == list(record).
@@ -299,6 +303,8 @@
     ;       maybe_date_time(maybe(date))
     ;       maybe_term(maybe({varset, term}))
     ;       maybe_univ(maybe(univ)).
+
+:- type csv.field_values == list(csv.field_value).
 
 %----------------------------------------------------------------------------%
 %
@@ -422,14 +428,22 @@
 :- type csv.raw_record
     --->    raw_record(
                 raw_record_line_no :: int,
+                % The starting line number for this record.
+
                 raw_record_field   :: raw_fields
+                % The fields for this record.
             ).
 
 :- type csv.raw_field
     --->    raw_field(
                 raw_field_value   :: string,
+                % The value of of this field as a string.
+
                 raw_field_line_no :: int,
+                % The starting line number for this field.
+
                 raw_field_col_no  :: int
+                % The starting column number for this field.
             ).
 
 :- type csv.raw_fields == list(csv.raw_field).

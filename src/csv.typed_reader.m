@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013 Julien Fischer.
+% Copyright (C) 2013-2014 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 
@@ -230,12 +230,12 @@ get_header(Reader, Result, !State) :-
     ).
 
 :- type process_record_result
-    --->    prr_ok(list(field_value))
+    --->    prr_ok(field_values)
     ;       prr_error(
-                int,        % Line number.
-                int,        % Column number.
-                int,        % Field number.
-                string      % Error.
+                line_number,
+                column_number,
+                field_number,
+                string
             ). 
 
 get_record(Reader, Result, !State) :-
@@ -247,9 +247,9 @@ get_record(Reader, Result, !State) :-
     (
         RecordResult = ok(RawRecord),
         FieldDescs = Reader ^ csv_record_desc,
-        FieldNum = 1,
+        FieldNo = 1,
         RawRecord = raw_record(_, RawFields),
-        process_fields(StreamName, LineNo, FieldDescs, RawFields, FieldNum,
+        process_fields(StreamName, FieldDescs, RawFields, FieldNo,
             [], ProcessFieldsResult),
         (
             ProcessFieldsResult = prr_ok(RevFields),
@@ -258,9 +258,9 @@ get_record(Reader, Result, !State) :-
             Result = ok(Record)
         ;
             ProcessFieldsResult = prr_error(ErrorLineNo, ErrorColNo,
-                ErrorFieldNum, ErrorMsg),
+                ErrorFieldNo, ErrorMsg),
             Error = csv_error(StreamName, ErrorLineNo, ErrorColNo,
-                ErrorFieldNum, ErrorMsg),
+                ErrorFieldNo, ErrorMsg),
             Result = error(Error)
         )
     ;
@@ -277,32 +277,30 @@ get_record(Reader, Result, !State) :-
     --->    pfr_ok(field_value)
     ;       pfr_discard
     ;       pfr_error(
-                int,        % Line number.
-                int,        % Column number.
-                int,        % Field number.
-                string      % Error.
+                line_number,
+                column_number,
+                field_number,
+                string
             ).
 
-:- pred process_fields(stream.name::in, int::in,
-    list(field_desc)::in, list(raw_field)::in,
-    int::in, list(field_value)::in, process_record_result::out) is det.
+:- pred process_fields(stream.name::in, record_desc::in, raw_fields::in,
+    field_number::in, field_values::in, process_record_result::out) is det.
 
-process_fields(_, _, [], [], _, FieldValues, prr_ok(FieldValues)).
-process_fields(_, _, [_ | _], [], _, _, _) :-
+process_fields(_, [], [], _, FieldValues, prr_ok(FieldValues)).
+process_fields(_, [_ | _], [], _, _, _) :-
     unexpected($file, $pred, "argument length mismatch").
-process_fields(_, _, [], [_ | _], _, _, _) :-
+process_fields(_, [], [_ | _], _, _, _) :-
     unexpected($file, $pred, "argument length mismatch").
-process_fields(StreamName, LineNo, [Desc | Descs], [RawField | RawFields],
-        FieldNum, FieldValues, MaybeResult) :-
-    process_field(StreamName, LineNo, Desc, RawField, FieldNum,
-        MaybeFieldResult),
+process_fields(StreamName, [Desc | Descs], [RawField | RawFields],
+        FieldNo, FieldValues, MaybeResult) :-
+    process_field(StreamName, Desc, RawField, FieldNo, MaybeFieldResult),
     (
         MaybeFieldResult = pfr_ok(FieldValue),
-        process_fields(StreamName, LineNo, Descs, RawFields, FieldNum + 1,
+        process_fields(StreamName, Descs, RawFields, FieldNo + 1,
             [FieldValue | FieldValues], MaybeResult)
     ;
         MaybeFieldResult = pfr_discard,
-        process_fields(StreamName, LineNo, Descs, RawFields, FieldNum + 1,
+        process_fields(StreamName, Descs, RawFields, FieldNo + 1,
             FieldValues, MaybeResult)
     ;
         MaybeFieldResult = pfr_error(ErrorLineNo, ErrorColNo, ErrorFieldNo,
@@ -311,10 +309,10 @@ process_fields(StreamName, LineNo, [Desc | Descs], [RawField | RawFields],
             ErrorMsg)
     ).
 
-:- pred process_field(stream.name::in, int::in, field_desc::in, raw_field::in,
-    int::in, process_field_result::out) is det.
+:- pred process_field(stream.name::in, field_desc::in, raw_field::in,
+    field_number::in, process_field_result::out) is det.
 
-process_field(_, _, Desc, RawField, FieldNum, MaybeResult) :-
+process_field(_, Desc, RawField, FieldNo, MaybeResult) :-
     RawField = raw_field(FieldValue, LineNo, ColNo),
     Desc = discard(MaybeWidthLimit),
     (
@@ -324,12 +322,12 @@ process_field(_, _, Desc, RawField, FieldNum, MaybeResult) :-
         MaybeWidthLimit = limited(Limit),
         string.length(FieldValue, RawFieldLength),
         ( if RawFieldLength > Limit
-        then MaybeResult = pfr_error(LineNo, ColNo, FieldNum, "field width exceeded")
+        then MaybeResult = pfr_error(LineNo, ColNo, FieldNo, "field width exceeded")
         else MaybeResult = pfr_discard
         )
     ).
 
-process_field(StreamName, LineNo, Desc, RawField, FieldNum, MaybeResult) :-
+process_field(StreamName, Desc, RawField, FieldNo, MaybeResult) :-
     Desc = field_desc(Type, MaybeWidthLimit, TrimWS),
     (
         TrimWS = trim_whitespace,
@@ -344,8 +342,8 @@ process_field(StreamName, LineNo, Desc, RawField, FieldNum, MaybeResult) :-
     ),
     (
         MaybeWidthLimit = no_limit,
-        process_field_apply_actions(StreamName, LineNo, Type,
-            RawFieldPrime, FieldNum, MaybeResult)
+        process_field_apply_actions(StreamName, Type,
+            RawFieldPrime, FieldNo, MaybeResult)
     ;
         MaybeWidthLimit = limited(Limit),
         string.length(RawFieldPrime ^ raw_field_value, RawFieldLength),
@@ -353,58 +351,58 @@ process_field(StreamName, LineNo, Desc, RawField, FieldNum, MaybeResult) :-
             MaybeResult = pfr_error(
                 RawFieldPrime ^ raw_field_line_no,
                 RawFieldPrime ^ raw_field_col_no,
-                FieldNum, "field width exceeded")
+                FieldNo, "field width exceeded")
         else
-            process_field_apply_actions(StreamName, LineNo, Type,
-                RawFieldPrime, FieldNum, MaybeResult)
+            process_field_apply_actions(StreamName, Type,
+                RawFieldPrime, FieldNo, MaybeResult)
         )
     ).
 
-:- pred process_field_apply_actions(stream.name::in, int::in, field_type::in,
-    raw_field::in, int::in, process_field_result::out) is det.
+:- pred process_field_apply_actions(stream.name::in, field_type::in,
+    raw_field::in, field_number::in, process_field_result::out) is det.
 
-process_field_apply_actions(StreamName, LineNo, Type, RawField, FieldNum,
+process_field_apply_actions(StreamName, Type, RawField, FieldNo,
         MaybeResult) :-
     ( 
         Type = bool(BoolHandler, Actions),
         process_field_apply_actions_bool(BoolHandler, Actions, RawField,
-            FieldNum, MaybeResult)
+            FieldNo, MaybeResult)
     ;
         Type = int(FloatIntHandler, Actions),
         process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
-            FieldNum, MaybeResult)
+            FieldNo, MaybeResult)
     ;
         Type = float(Actions),
         process_field_apply_actions_float(Actions, RawField,
-            FieldNum, MaybeResult)
+            FieldNo, MaybeResult)
     ;
         Type = floatstr(Actions),
         process_field_apply_actions_floatstr(Actions, RawField,
-            FieldNum, MaybeResult)
+            FieldNo, MaybeResult)
     ;
         Type = string(Actions),
         process_field_apply_actions_string(Actions, RawField,
-            FieldNum, MaybeResult)
+            FieldNo, MaybeResult)
     ;
         Type = date(Format, Actions),
         process_field_apply_actions_date(Format, Actions, RawField,
-            FieldNum, MaybeResult)
+            FieldNo, MaybeResult)
     ;
         Type = date_time(Format, Actions),
         process_field_apply_actions_date_time(Format, Actions, RawField,
-            FieldNum, MaybeResult)
+            FieldNo, MaybeResult)
     ;
         Type = term(Actions),
-        process_field_apply_actions_term(StreamName, LineNo, Actions,
-            RawField, FieldNum, MaybeResult)
+        process_field_apply_actions_term(StreamName, Actions,
+            RawField, FieldNo, MaybeResult)
     ;
         Type = univ(UnivHandler, Actions),
         process_field_apply_actions_univ(UnivHandler, Actions, RawField,
-            FieldNum, MaybeResult)
+            FieldNo, MaybeResult)
     ;
         Type = maybe(MaybeFieldType),
-        process_field_maybe(StreamName, LineNo, MaybeFieldType, RawField,
-            FieldNum, MaybeResult)
+        process_field_maybe(StreamName, MaybeFieldType, RawField,
+            FieldNo, MaybeResult)
     ).
 
 %----------------------------------------------------------------------------%
@@ -413,11 +411,11 @@ process_field_apply_actions(StreamName, LineNo, Type, RawField, FieldNum,
 %
 
 :- pred process_field_apply_actions_bool(bool_handler::in,
-    field_actions(bool)::in, raw_field::in, int::in, 
+    field_actions(bool)::in, raw_field::in, field_number::in, 
     process_field_result::out) is det.
 
 process_field_apply_actions_bool(BoolHandler, Actions, RawField,
-        FieldNum, MaybeResult) :-
+        FieldNo, MaybeResult) :-
     RawField = raw_field(FieldValue, LineNo, ColNo),
     MaybeField = BoolHandler(FieldValue),
     (
@@ -428,11 +426,11 @@ process_field_apply_actions_bool(BoolHandler, Actions, RawField,
             MaybeResult = pfr_ok(bool(BoolPrime))
         ;
             ActionResult = error(ActionError),
-            MaybeResult = pfr_error(LineNo, ColNo, FieldNum, ActionError)
+            MaybeResult = pfr_error(LineNo, ColNo, FieldNo, ActionError)
         )
     ;
         MaybeField = error(BoolError),
-        MaybeResult = pfr_error(LineNo, ColNo, FieldNum, BoolError)
+        MaybeResult = pfr_error(LineNo, ColNo, FieldNo, BoolError)
     ).
 
 %----------------------------------------------------------------------------%
@@ -441,11 +439,11 @@ process_field_apply_actions_bool(BoolHandler, Actions, RawField,
 %
         
 :- pred process_field_apply_actions_int(float_int_handler::in,
-    field_actions(int)::in, raw_field::in, int::in, 
+    field_actions(int)::in, raw_field::in, field_number::in, 
     process_field_result::out) is det.
 
 process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
-        FieldNum, MaybeResult) :-
+        FieldNo, MaybeResult) :-
     RawField = raw_field(FieldValue, LineNo, ColNo),
     ( if string.to_int(FieldValue, Int) then
         apply_field_actions(Actions, Int, ActionResult),
@@ -454,12 +452,12 @@ process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
             MaybeResult = pfr_ok(int(IntPrime))
         ;
             ActionResult = error(ActionError),
-            MaybeResult = pfr_error(LineNo, ColNo, FieldNum, ActionError)
+            MaybeResult = pfr_error(LineNo, ColNo, FieldNo, ActionError)
         )
     else 
         (
             FloatIntHandler = do_not_allow_floats, 
-            MaybeResult = pfr_error(LineNo, ColNo, FieldNum,
+            MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
                 "not an integer field")
         ;
             FloatIntHandler = convert_float_to_int(FloatToIntFunc),
@@ -471,11 +469,11 @@ process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
                     MaybeResult = pfr_ok(int(IntPrime))
                 ;
                     ActionResult = error(ActionError),
-                    MaybeResult = pfr_error(LineNo, ColNo, FieldNum,
+                    MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
                         ActionError)
                 )
             else
-                MaybeResult = pfr_error(LineNo, ColNo, FieldNum,
+                MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
                     "not an integer field")
             )
         )
@@ -487,9 +485,9 @@ process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
 %
 
 :- pred process_field_apply_actions_float(field_actions(float)::in,
-    raw_field::in, int::in, process_field_result::out) is det.
+    raw_field::in, field_number::in, process_field_result::out) is det.
 
-process_field_apply_actions_float(Actions, RawField, FieldNum,
+process_field_apply_actions_float(Actions, RawField, FieldNo,
         MaybeResult) :-
     RawField = raw_field(FieldValue, LineNo, ColNo),
     ( if string.to_float(FieldValue, Float) then
@@ -499,10 +497,10 @@ process_field_apply_actions_float(Actions, RawField, FieldNum,
             MaybeResult = pfr_ok(float(FloatPrime))
         ;
             ActionResult = error(ActionError),
-            MaybeResult = pfr_error(LineNo, ColNo, FieldNum, ActionError)
+            MaybeResult = pfr_error(LineNo, ColNo, FieldNo, ActionError)
         )
     else
-        MaybeResult = pfr_error(LineNo, ColNo, FieldNum, "not a float field")
+        MaybeResult = pfr_error(LineNo, ColNo, FieldNo, "not a float field")
     ).
 
 %----------------------------------------------------------------------------%
@@ -511,9 +509,9 @@ process_field_apply_actions_float(Actions, RawField, FieldNum,
 %
         
 :- pred process_field_apply_actions_floatstr(field_actions(string)::in,
-    raw_field::in, int::in, process_field_result::out) is det.
+    raw_field::in, field_number::in, process_field_result::out) is det.
 
-process_field_apply_actions_floatstr(Actions, RawField, FieldNum,
+process_field_apply_actions_floatstr(Actions, RawField, FieldNo,
         MaybeResult) :-
     RawField = raw_field(FieldValue, LineNo, ColNo),
     % XXX we should just check that the float matches a valid
@@ -531,10 +529,10 @@ process_field_apply_actions_floatstr(Actions, RawField, FieldNum,
             )
         ;
             ActionResult = error(ActionError),
-            MaybeResult = pfr_error(LineNo, ColNo, FieldNum, ActionError)
+            MaybeResult = pfr_error(LineNo, ColNo, FieldNo, ActionError)
         )
     else
-        MaybeResult = pfr_error(LineNo, ColNo, FieldNum,
+        MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
             "not a float field")
     ).
 
@@ -544,9 +542,9 @@ process_field_apply_actions_floatstr(Actions, RawField, FieldNum,
 %
 
 :- pred process_field_apply_actions_string(field_actions(string)::in,
-    raw_field::in, int::in, process_field_result::out) is det.
+    raw_field::in, field_number::in, process_field_result::out) is det.
 
-process_field_apply_actions_string(Actions, RawField, FieldNum,
+process_field_apply_actions_string(Actions, RawField, FieldNo,
         MaybeResult) :-
     RawField = raw_field(FieldValue, LineNo, ColNo),
     apply_field_actions(Actions, FieldValue, ActionResult),
@@ -555,7 +553,7 @@ process_field_apply_actions_string(Actions, RawField, FieldNum,
         MaybeResult = pfr_ok(string(String))
     ;
         ActionResult = error(ActionError),
-        MaybeResult = pfr_error(LineNo, ColNo, FieldNum, ActionError)
+        MaybeResult = pfr_error(LineNo, ColNo, FieldNo, ActionError)
     ).
 
 %----------------------------------------------------------------------------%
@@ -564,10 +562,10 @@ process_field_apply_actions_string(Actions, RawField, FieldNum,
 %
 
 :- pred process_field_apply_actions_date(date_format::in,
-    field_actions(date)::in, raw_field::in, int::in, process_field_result::out)
-    is det.
+    field_actions(date)::in, raw_field::in, field_number::in,
+    process_field_result::out) is det.
 
-process_field_apply_actions_date(Format, Actions, RawField, FieldNum,
+process_field_apply_actions_date(Format, Actions, RawField, FieldNo,
         MaybeResult) :-
     RawField = raw_field(FieldValue, LineNo, ColNo),
     (
@@ -598,11 +596,11 @@ process_field_apply_actions_date(Format, Actions, RawField, FieldNum,
             MaybeResult = pfr_ok(date(DateTimePrime))
         ;
             ActionResult = error(ActionError),
-            MaybeResult = pfr_error(LineNo, ColNo, FieldNum, ActionError)
+            MaybeResult = pfr_error(LineNo, ColNo, FieldNo, ActionError)
         )
     ;
         MaybeDate = error(DateError),
-        MaybeResult = pfr_error(LineNo, ColNo, FieldNum, DateError)
+        MaybeResult = pfr_error(LineNo, ColNo, FieldNo, DateError)
     ).
 
 :- pred convert_date(pred(list(string), date)::in(pred(in, out) is semidet),
@@ -716,10 +714,10 @@ abbrev_name_to_month_2("Dec",  december).
 %----------------------------------------------------------------------------%
 
 :- pred process_field_apply_actions_date_time(date_time_format::in,
-    field_actions(date)::in, raw_field::in, int::in,
+    field_actions(date)::in, raw_field::in, field_number::in,
     process_field_result::out) is det.
 
-process_field_apply_actions_date_time(Format, Actions, RawField, FieldNum,
+process_field_apply_actions_date_time(Format, Actions, RawField, FieldNo,
         MaybeResult) :-
     RawField = raw_field(FieldValue, LineNo, ColNo),
     Format = mm_dd_yyyy_hh_mm(DateSep, DateTimeSep, TimeSep),
@@ -746,10 +744,10 @@ process_field_apply_actions_date_time(Format, Actions, RawField, FieldNum,
             MaybeResult = pfr_ok(date_time(DateTimePrime))
         ;
             ActionResult = error(ActionError),
-            MaybeResult = pfr_error(LineNo, ColNo, FieldNum, ActionError)
+            MaybeResult = pfr_error(LineNo, ColNo, FieldNo, ActionError)
         )
     else
-        MaybeResult = pfr_error(LineNo, ColNo, FieldNum,
+        MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
             "not a valid date-time")
     ).
     
@@ -773,13 +771,13 @@ mm_dd_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
 
 %----------------------------------------------------------------------------%
 
-:- pred process_field_apply_actions_term(stream.name::in, int::in,
-    field_actions({varset, term})::in, raw_field::in, int::in,
+:- pred process_field_apply_actions_term(stream.name::in,
+    field_actions({varset, term})::in, raw_field::in, field_number::in,
     process_field_result::out) is det.
 
-process_field_apply_actions_term(StreamName, LineNo, Actions, RawField,
-        FieldNum, MaybeResult) :-
-    RawField = raw_field(FieldValue, StartLineNo, ColNo),
+process_field_apply_actions_term(StreamName, Actions, RawField,
+        FieldNo, MaybeResult) :-
+    RawField = raw_field(FieldValue, LineNo, ColNo),
     parser.read_term_from_string(StreamName, FieldValue, _EndPos, ReadTerm),
     (
         ReadTerm = term(Varset, Term0),
@@ -804,20 +802,20 @@ process_field_apply_actions_term(StreamName, LineNo, Actions, RawField,
             MaybeResult = pfr_ok(term(VarsetPrime, TermPrime))
         ;
             ActionResult = error(ActionError),
-            MaybeResult = pfr_error(StartLineNo, ColNo, FieldNum,
+            MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
                 ActionError)
         )
     ;
         % XXX I don't think this can occur when reading a term
         % from a string.
         ReadTerm = eof,
-        MaybeResult = pfr_error(StartLineNo, ColNo, FieldNum,
+        MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
             "not a term field")
     ;
         % Ignore the line number here since our caller will set the 
         % correct one (i.e. the one from the CSV reader stream).
         ReadTerm = error(TermErrorMsg, _),
-        MaybeResult = pfr_error(StartLineNo, ColNo, FieldNum,
+        MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
             TermErrorMsg)
     ).
 
@@ -827,11 +825,11 @@ process_field_apply_actions_term(StreamName, LineNo, Actions, RawField,
 %
 
 :- pred process_field_apply_actions_univ(univ_handler::in,
-    field_actions(univ)::in, raw_field::in, int::in, 
+    field_actions(univ)::in, raw_field::in, field_number::in, 
     process_field_result::out) is det.
 
 process_field_apply_actions_univ(UnivHandler, Actions, RawField,
-        FieldNum, MaybeResult) :-
+        FieldNo, MaybeResult) :-
     RawField = raw_field(FieldValue, LineNo, ColNo),
     MaybeField = UnivHandler(FieldValue),
     (
@@ -842,11 +840,11 @@ process_field_apply_actions_univ(UnivHandler, Actions, RawField,
             MaybeResult = pfr_ok(univ(UnivPrime))
         ;
             ActionResult = error(ActionError),
-            MaybeResult = pfr_error(LineNo, ColNo, FieldNum, ActionError)
+            MaybeResult = pfr_error(LineNo, ColNo, FieldNo, ActionError)
         )
     ;
         MaybeField = error(UnivError),
-        MaybeResult = pfr_error(LineNo, ColNo, FieldNum, UnivError)
+        MaybeResult = pfr_error(LineNo, ColNo, FieldNo, UnivError)
     ).
 
 %-----------------------------------------------------------------------------%
@@ -854,13 +852,12 @@ process_field_apply_actions_univ(UnivHandler, Actions, RawField,
 % Process maybe fields.
 %
 
-:- pred process_field_maybe(stream.name::in, int::in,
-    field_type::in, raw_field::in, int::in,
-    process_field_result::out) is det.
+:- pred process_field_maybe(stream.name::in, field_type::in, raw_field::in,
+    field_number::in, process_field_result::out) is det.
 
-process_field_maybe(StreamName, LineNo, MaybeFieldType, RawField, FieldNum,
+process_field_maybe(StreamName, MaybeFieldType, RawField, FieldNo,
         MaybeResult) :-
-    RawField = raw_field(FieldValue, _StartLineNo, _ColNo),
+    RawField = raw_field(FieldValue, _LineNo, _ColNo),
     ( if FieldValue = "" then
         (
             MaybeFieldType = bool(_, _),
@@ -894,8 +891,8 @@ process_field_maybe(StreamName, LineNo, MaybeFieldType, RawField, FieldNum,
             unexpected($file, $pred, "nested maybes in field desc")
         )
     else
-        process_field_apply_actions(StreamName, LineNo, MaybeFieldType,
-            RawField, FieldNum, MaybeResult0),
+        process_field_apply_actions(StreamName, MaybeFieldType,
+            RawField, FieldNo, MaybeResult0),
         (
             MaybeResult0 = pfr_ok(MaybeValue),
             (
