@@ -427,7 +427,7 @@
 
 :- type csv.raw_record
     --->    raw_record(
-                raw_record_line_no :: int,
+                raw_record_line_no :: line_number,
                 % The starting line number for this record.
 
                 raw_record_field   :: raw_fields
@@ -439,10 +439,10 @@
                 raw_field_value   :: string,
                 % The value of of this field as a string.
 
-                raw_field_line_no :: int,
+                raw_field_line_no :: line_number,
                 % The starting line number for this field.
 
-                raw_field_col_no  :: int
+                raw_field_col_no  :: column_number
                 % The starting column number for this field.
             ).
 
