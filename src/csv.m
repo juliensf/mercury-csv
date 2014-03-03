@@ -178,8 +178,8 @@
     ;       floatstr(field_actions(string))
             % The field represents a float value, but we return it as Mercury
             % string.
-            % NOTE: after applying any user actions the value is check again.
-            % An error returned if the string no longer represents a float.
+            % NOTE: after applying any user actions the value is checked again.
+            % An error is returned if the string no longer represents a float.
 
     ;       string(field_actions(string))
             % A Mercury string.
