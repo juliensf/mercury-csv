@@ -1,7 +1,7 @@
 mercury_csv -- A Mercury library for reading CSV data
 =====================================================
 
-`mercury_csv' is a Mercury library for reading CSV data from arbitrary
+'mercury_csv' is a Mercury library for reading CSV data from arbitrary
 character streams.
 
 
@@ -25,7 +25,7 @@ FEATURES
 
 LICENSE
 -------
-`mercury_csv' is licensed under a simple 2-clause BSD style license.
+'mercury_csv' is licensed under a simple 2-clause BSD style license.
 See the file COPYING for details. 
 
 

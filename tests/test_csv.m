@@ -290,7 +290,7 @@ run_test_invalid(OptionTable, Name, HeaderDesc, RecordDesc,
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 %
-% Test resuts.
+% Test results.
 %
 
 :- type test_results

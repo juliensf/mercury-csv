@@ -325,7 +325,7 @@ next_quoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
             )
         else 
             % NOTE: quoted delimiter characters do not count has having
-            % seen a delimter.
+            % seen a delimiter.
             !:LastSeen = last_seen_other,
             add(Buffer, Char, !State),
             % Reset the column number if we see a newline.
