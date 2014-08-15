@@ -362,6 +362,13 @@
     %
 :- pred has_header(csv.reader(Stream)::in) is semidet.
 
+    % read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO):
+    % Open the text file FileName and read CSV data as per the given header and
+    % record descriptors.  The file is closed when EOF is reached.
+    %
+:- pred read_from_file(string::in, header_desc::in, record_desc::in,
+    csv.result(csv, io.error)::out, io::di, io::uo) is det.
+
 %----------------------------------------------------------------------------%
 % 
 % Stream type class instances for CSV readers.
@@ -631,6 +638,27 @@ has_header(Reader) :-
 
 get_field_width_limit(discard(MaybeLimit)) = MaybeLimit.
 get_field_width_limit(field_desc(_, MaybeLimit, _)) = MaybeLimit.
+
+%----------------------------------------------------------------------------%
+
+read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
+    io.open_input(FileName, OpenFileResult, !IO),
+    (
+        OpenFileResult = ok(File),
+        Reader = init_reader(File, HeaderDesc, RecordDesc),
+        get(Reader, Result, !IO),
+        (
+            ( Result = ok(_)
+            ; Result = eof
+            ),
+            io.close_input(File, !IO)
+        ;
+            Result = error(_)
+        )
+    ;
+        OpenFileResult = error(IO_Error),
+        Result = error(stream_error(IO_Error))
+    ).
 
 %----------------------------------------------------------------------------%
 
