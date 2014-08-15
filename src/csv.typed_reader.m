@@ -720,35 +720,68 @@ abbrev_name_to_month_2("Dec",  december).
 process_field_apply_actions_date_time(Format, Actions, RawField, FieldNo,
         MaybeResult) :-
     RawField = raw_field(FieldValue, LineNo, ColNo),
-    Format = mm_dd_yyyy_hh_mm(DateSep, DateTimeSep, TimeSep),
-    % XXX there's no good reason for this restriction.
-    ( if 
-        ( DateSep = TimeSep
-        ; DateSep = DateTimeSep
-        ; DateTimeSep = TimeSep
+    (
+        Format = mm_dd_yyyy_hh_mm(DateSep, DateTimeSep, TimeSep),
+        % XXX there's no good reason for this restriction.
+        ( if
+            ( DateSep = TimeSep
+            ; DateSep = DateTimeSep
+            ; DateTimeSep = TimeSep
+            )
+        then
+            error("separators for date_times must be distinct")
+        else
+            true
+        ),
+        DateTimeComponentStrs = string.split_at_string(DateTimeSep,
+            FieldValue),
+        ( if
+            mm_dd_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
+                DateTime)
+        then
+            apply_field_actions(Actions, DateTime, ActionResult),
+            (
+                ActionResult = ok(DateTimePrime),
+                MaybeResult = pfr_ok(date_time(DateTimePrime))
+            ;
+                ActionResult = error(ActionError),
+                MaybeResult = pfr_error(LineNo, ColNo, FieldNo, ActionError)
+            )
+        else
+            MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
+                "not a valid date-time")
         )
-    then
-        error("separators for date_times must be distinct")
-    else
-        true
-    ),
-    DateTimeComponentStrs = string.split_at_string(DateTimeSep,
-        FieldValue),
-    ( if
-        mm_dd_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
-            DateTime)
-    then
-        apply_field_actions(Actions, DateTime, ActionResult),
-        (
-            ActionResult = ok(DateTimePrime),
-            MaybeResult = pfr_ok(date_time(DateTimePrime))
-        ;
-            ActionResult = error(ActionError),
-            MaybeResult = pfr_error(LineNo, ColNo, FieldNo, ActionError)
+    ;
+        Format = dd_mm_yyyy_hh_mm(DateSep, DateTimeSep, TimeSep),
+        % XXX there's no good reason for this restriction.
+        ( if
+            ( DateSep = TimeSep
+            ; DateSep = DateTimeSep
+            ; DateTimeSep = TimeSep
+            )
+        then
+            error("separators for date_times must be distinct")
+        else
+            true
+        ),
+        DateTimeComponentStrs = string.split_at_string(DateTimeSep,
+            FieldValue),
+        ( if
+            dd_mm_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
+                DateTime)
+        then
+            apply_field_actions(Actions, DateTime, ActionResult),
+            (
+                ActionResult = ok(DateTimePrime),
+                MaybeResult = pfr_ok(date_time(DateTimePrime))
+            ;
+                ActionResult = error(ActionError),
+                MaybeResult = pfr_error(LineNo, ColNo, FieldNo, ActionError)
+            )
+        else
+            MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
+                "not a valid date-time")
         )
-    else
-        MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
-            "not a valid date-time")
     ).
     
 :- pred mm_dd_yyyy_hh_mm_to_date(string::in, string::in,
@@ -760,6 +793,24 @@ mm_dd_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
     DateComponentStrs = string.split_at_string(DateSep, DateStr),
     TimeComponentStrs = string.split_at_string(TimeSep, TimeStr),
     DateComponentStrs = [MonthStr, DayStr, YearStr],
+    string.to_int(YearStr, Year),
+    string.to_int(MonthStr, MonthNum),
+    string.to_int(DayStr, Day),
+    int_to_month(MonthNum, Month),
+    TimeComponentStrs = [HourStr, MinuteStr],
+    string.to_int(HourStr, Hour),
+    string.to_int(MinuteStr, Minute),
+    calendar.init_date(Year, Month, Day, Hour, Minute, 0, 0, DateTime).
+
+:- pred dd_mm_yyyy_hh_mm_to_date(string::in, string::in,
+    list(string)::in, date::out) is semidet.
+
+dd_mm_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
+        DateTime) :-
+    DateTimeComponentStrs = [DateStr, TimeStr],
+    DateComponentStrs = string.split_at_string(DateSep, DateStr),
+    TimeComponentStrs = string.split_at_string(TimeSep, TimeStr),
+    DateComponentStrs = [DayStr, MonthStr, YearStr],
     string.to_int(YearStr, Year),
     string.to_int(MonthStr, MonthNum),
     string.to_int(DayStr, Day),

@@ -252,7 +252,8 @@
     % XXX currently all three must be different from each other.
     %
 :- type date_time_format
-    --->   mm_dd_yyyy_hh_mm(string, string, string). % e.g. 03-24-2013 12:23
+    --->   mm_dd_yyyy_hh_mm(string, string, string)  % e.g. 03-24-2013 12:23
+    ;      dd_mm_yyyy_hh_mm(string, string, string). % e.g. 24-03-2013 12:23
 
 %----------------------------------------------------------------------------%
 %

@@ -413,6 +413,16 @@ tests = [
 
     test_case(
         test_type_valid,
+        "date_time2",
+        no_header,
+        [
+            field_desc(date_time(dd_mm_yyyy_hh_mm("/", " ", ":"), []), no_limit, do_not_trim_whitespace),
+            field_desc(int(do_not_allow_floats, []), no_limit, do_not_trim_whitespace)
+        ]
+    ),
+
+    test_case(
+        test_type_valid,
         "maybe",
         no_header,
         [
