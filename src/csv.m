@@ -442,6 +442,8 @@
                 % The fields for this record.
             ).
 
+:- type csv.raw_records == list(raw_record).
+
 :- type csv.raw_field
     --->    raw_field(
                 raw_field_value   :: string,
@@ -454,7 +456,10 @@
                 % The starting column number for this field.
             ).
 
-:- type csv.raw_fields == list(csv.raw_field).
+:- type csv.raw_fields == list(raw_field).
+
+:- type csv.raw_csv
+    --->    raw_csv(raw_records).
 
 %----------------------------------------------------------------------------%
 % 
@@ -473,6 +478,13 @@
     <= stream.input(Stream, io).
 
 :- instance stream.reader(csv.raw_reader(Stream), csv.raw_record, io,
+        csv.error(Error))
+    <= (
+        stream.line_oriented(Stream, io),
+        stream.putback(Stream, char, io, Error)
+    ).
+
+:- instance stream.reader(csv.raw_reader(Stream), csv.raw_csv, io,
         csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
@@ -768,6 +780,18 @@ init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter) =
     ( get(Reader, Result, !State) :-
         csv.raw_reader.get_raw_record(Reader, Result, !State)
     )   
+].
+
+:- instance stream.reader(csv.raw_reader(Stream), csv.raw_csv, io,
+        csv.error(Error))
+    <= (
+        stream.line_oriented(Stream, io),
+        stream.putback(Stream, char, io, Error)
+    ) where
+[
+    ( get(Reader, Result, !State) :-
+        csv.raw_reader.get_raw_csv(Reader, Result, !State)
+    )
 ].
 
 :- instance stream.line_oriented(csv.raw_reader(Stream), io)

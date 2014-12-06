@@ -19,6 +19,13 @@
         stream.putback(Stream, char, State, Error)
     ).
 
+:- pred get_raw_csv(csv.raw_reader(Stream)::in,
+    csv.result(raw_csv, Error)::out, State::di, State::uo) is det
+    <= (
+        stream.line_oriented(Stream, State),
+        stream.putback(Stream, char, State, Error)
+    ).
+
 %-----------------------------------------------------------------------------%
 
 :- pred fold(csv.raw_reader(Stream), pred(raw_record, T, T),
@@ -108,6 +115,19 @@ get_raw_record(Reader, Result, !State) :-
         Result = eof
     ;
         RecordResult = error(Error),
+        Result = error(Error)
+    ).
+
+%----------------------------------------------------------------------------%
+
+get_raw_csv(Reader, Result, !State) :-
+    raw_reader.fold(Reader, list.cons, [], FoldResult, !State),
+    (
+        FoldResult = ok(RevRawRecords),
+        list.reverse(RevRawRecords, RawRecords),
+        Result = ok(raw_csv(RawRecords))
+    ;
+        FoldResult = error(_, Error),
         Result = error(Error)
     ).
 

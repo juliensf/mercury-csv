@@ -163,7 +163,7 @@ get_csv(Desc, Result, !State) :-
 %-----------------------------------------------------------------------------%
 
 get_records(Desc, Result, !State) :-
-    record_fold(Desc, add_record, [], FoldResult, !State),
+    record_fold(Desc, list.cons, [], FoldResult, !State),
     (
         FoldResult = ok(RevRecords),
         list.reverse(RevRecords, Records),
@@ -172,11 +172,6 @@ get_records(Desc, Result, !State) :-
         FoldResult = error(_, Error),
         Result = error(Error)
     ).
-
-:- pred add_record(record::in, records::in, records::out) is det.
-
-add_record(Record, !Records) :-
-    !:Records = [Record | !.Records].
 
 %-----------------------------------------------------------------------------%
 
