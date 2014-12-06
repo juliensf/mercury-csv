@@ -439,8 +439,17 @@ tests = [
             field_desc(maybe(term([])), no_limit, do_not_trim_whitespace),
             field_desc(maybe(term([])), no_limit, do_not_trim_whitespace)
         ]
-    )
+    ),
 
+    test_case(
+        test_type_invalid,
+        "field_desc_mismatch",
+        no_header,
+        [
+            field_desc(int(do_not_allow_floats, []), no_limit, do_not_trim_whitespace), 
+            field_desc(int(do_not_allow_floats, []), no_limit, do_not_trim_whitespace)
+        ]
+    )
 ].
 
 %-----------------------------------------------------------------------------%

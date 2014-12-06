@@ -248,9 +248,9 @@ get_record(Reader, Result, !State) :-
         RecordResult = ok(RawRecord),
         FieldDescs = Reader ^ csv_record_desc,
         FieldNo = 1,
-        RawRecord = raw_record(_, RawFields),
-        process_fields(StreamName, FieldDescs, RawFields, FieldNo,
-            [], ProcessFieldsResult),
+        RawRecord = raw_record(RecordLineNo, RawFields),
+        process_fields(StreamName, RecordLineNo, FieldDescs, RawFields,
+            FieldNo, [], ProcessFieldsResult),
         (
             ProcessFieldsResult = prr_ok(RevFields),
             list.reverse(RevFields, Fields),
@@ -283,24 +283,31 @@ get_record(Reader, Result, !State) :-
                 string
             ).
 
-:- pred process_fields(stream.name::in, record_desc::in, raw_fields::in,
-    field_number::in, field_values::in, process_record_result::out) is det.
+:- pred process_fields(stream.name::in, line_number::in, record_desc::in,
+    raw_fields::in, field_number::in, field_values::in,
+    process_record_result::out) is det.
 
-process_fields(_, [], [], _, FieldValues, prr_ok(FieldValues)).
-process_fields(_, [_ | _], [], _, _, _) :-
+process_fields(_, _, [], [], _, FieldValues, prr_ok(FieldValues)).
+process_fields(_, LineNo, Descs @ [_ | _], [], FieldNo, _, MaybeResult) :-
+    list.length(Descs, NumRemainingDescs),
+    string.format("expected %d fields in record: actual: %d",
+        [i(FieldNo + NumRemainingDescs - 1), i(FieldNo - 1)], Msg),
+    % XXX that's probably not hte best column number to report, but there isn't
+    % a more obvious one to hand.
+    ColNo = 1,
+    MaybeResult = prr_error(LineNo, ColNo, FieldNo, Msg).
+process_fields(_, _, [], [_ | _], _, _, _) :-
     unexpected($file, $pred, "argument length mismatch").
-process_fields(_, [], [_ | _], _, _, _) :-
-    unexpected($file, $pred, "argument length mismatch").
-process_fields(StreamName, [Desc | Descs], [RawField | RawFields],
+process_fields(StreamName, LineNo, [Desc | Descs], [RawField | RawFields],
         FieldNo, FieldValues, MaybeResult) :-
     process_field(StreamName, Desc, RawField, FieldNo, MaybeFieldResult),
     (
         MaybeFieldResult = pfr_ok(FieldValue),
-        process_fields(StreamName, Descs, RawFields, FieldNo + 1,
+        process_fields(StreamName, LineNo, Descs, RawFields, FieldNo + 1,
             [FieldValue | FieldValues], MaybeResult)
     ;
         MaybeFieldResult = pfr_discard,
-        process_fields(StreamName, Descs, RawFields, FieldNo + 1,
+        process_fields(StreamName, LineNo, Descs, RawFields, FieldNo + 1,
             FieldValues, MaybeResult)
     ;
         MaybeFieldResult = pfr_error(ErrorLineNo, ErrorColNo, ErrorFieldNo,
@@ -321,9 +328,11 @@ process_field(_, Desc, RawField, FieldNo, MaybeResult) :-
     ;
         MaybeWidthLimit = limited(Limit),
         string.length(FieldValue, RawFieldLength),
-        ( if RawFieldLength > Limit
-        then MaybeResult = pfr_error(LineNo, ColNo, FieldNo, "field width exceeded")
-        else MaybeResult = pfr_discard
+        ( if RawFieldLength > Limit then
+            MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
+                "field width exceeded")
+        else
+            MaybeResult = pfr_discard
         )
     ).
 
