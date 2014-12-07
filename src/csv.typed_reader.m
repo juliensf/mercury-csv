@@ -287,7 +287,7 @@ process_fields(_, LineNo, Descs @ [_ | _], [], FieldNo, _, MaybeResult) :-
     list.length(Descs, NumRemainingDescs),
     string.format("expected %d fields in record: actual: %d",
         [i(FieldNo + NumRemainingDescs - 1), i(FieldNo - 1)], Msg),
-    % XXX that's probably not hte best column number to report, but there isn't
+    % XXX that's probably not the best column number to report, but there isn't
     % a more obvious one to hand.
     ColNo = 1,
     MaybeResult = prr_error(LineNo, ColNo, FieldNo, Msg).
