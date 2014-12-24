@@ -624,7 +624,8 @@ yyyy_mm_dd_to_date(ComponentStrs, DateTime) :-
     string.to_int(YearStr, Year),
     string.to_int(MonthStr, MonthNum),
     string.to_int(DayStr, Day),
-    int_to_month(MonthNum, Month),
+    % XXX The stdlib now provide int_to_month.
+    csv.typed_reader.int_to_month(MonthNum, Month),
     calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
 
 :- pred dd_mm_yyyy_to_date(list(string)::in, date::out) is semidet.
@@ -633,7 +634,7 @@ dd_mm_yyyy_to_date(ComponentStrs, DateTime) :-
     ComponentStrs = [DayStr, MonthStr, YearStr],
     string.to_int(DayStr, Day),
     string.to_int(MonthStr, MonthNum),
-    int_to_month(MonthNum, Month),
+    csv.typed_reader.int_to_month(MonthNum, Month),
     string.to_int(YearStr, Year),
     calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
 
@@ -642,7 +643,7 @@ dd_mm_yyyy_to_date(ComponentStrs, DateTime) :-
 mm_dd_yyyy_to_date(ComponentStrs, DateTime) :-
     ComponentStrs = [MonthStr, DayStr, YearStr],
     string.to_int(MonthStr, MonthNum),
-    int_to_month(MonthNum, Month),
+    csv.typed_reader.int_to_month(MonthNum, Month),
     string.to_int(DayStr, Day),
     string.to_int(YearStr, Year),
     calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
@@ -800,7 +801,7 @@ mm_dd_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
     string.to_int(YearStr, Year),
     string.to_int(MonthStr, MonthNum),
     string.to_int(DayStr, Day),
-    int_to_month(MonthNum, Month),
+    csv.typed_reader.int_to_month(MonthNum, Month),
     TimeComponentStrs = [HourStr, MinuteStr],
     string.to_int(HourStr, Hour),
     string.to_int(MinuteStr, Minute),
@@ -818,7 +819,7 @@ dd_mm_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
     string.to_int(YearStr, Year),
     string.to_int(MonthStr, MonthNum),
     string.to_int(DayStr, Day),
-    int_to_month(MonthNum, Month),
+    csv.typed_reader.int_to_month(MonthNum, Month),
     TimeComponentStrs = [HourStr, MinuteStr],
     string.to_int(HourStr, Hour),
     string.to_int(MinuteStr, Minute),
