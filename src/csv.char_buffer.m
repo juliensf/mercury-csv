@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2014 Julien Fischer.
+% Copyright (C) 2013-2015 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 
@@ -55,7 +55,7 @@ add(Buffer, Char, !State) :-
         BufferRep = char_buffer_rep([Char | Chars], NumChars + 1),
         impure set_mutvar(Buffer, BufferRep),
         !:State = !.State
-    ).    
+    ).
 
 num_chars(Buffer, _State) = NumChars :-
     promise_pure (
@@ -85,7 +85,7 @@ chomp_cr(Buffer, !State) :-
                 true
             )
         )
-    ). 
+    ).
 
 %-----------------------------------------------------------------------------%
 :- end_module char_buffer.

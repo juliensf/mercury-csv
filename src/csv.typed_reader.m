@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2014 Julien Fischer.
+% Copyright (C) 2013-2015 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 
@@ -16,7 +16,7 @@
 
     % get_csv(Stream, Desc, Result, !State):
     % Reads a sequence of CSV records from Stream until EOF.
-    % 
+    %
 :- pred get_csv(csv.reader(Stream)::in, csv.result(csv, Error)::out,
     State::di, State::uo) is det
     <= (
@@ -186,7 +186,7 @@ get_header(Reader, Result, !State) :-
         get_next_record(client_reader(Reader), RecordResult, !State),
         (
             RecordResult = ok(RawHeader),
-            RawHeader = raw_record(_, HeaderFields), 
+            RawHeader = raw_record(_, HeaderFields),
             RecordDesc = Reader ^ csv_record_desc,
             list.length(RecordDesc, NumFields),
             list.length(HeaderFields, NumHeaderFields),
@@ -231,7 +231,7 @@ get_header(Reader, Result, !State) :-
                 column_number,
                 field_number,
                 string
-            ). 
+            ).
 
 get_record(Reader, Result, !State) :-
     % Get the stream line number *before* we read in the next record.
@@ -291,8 +291,12 @@ process_fields(_, LineNo, Descs @ [_ | _], [], FieldNo, _, MaybeResult) :-
     % a more obvious one to hand.
     ColNo = 1,
     MaybeResult = prr_error(LineNo, ColNo, FieldNo, Msg).
-process_fields(_, _, [], [_ | _], _, _, _) :-
-    unexpected($file, $pred, "argument length mismatch").
+process_fields(_, LineNo, [], FieldValues @ [_ | _], FieldNo, _, MaybeResult) :-
+    list.length(FieldValues, NumFieldValues),
+    string.format("expected %d fields in record: actual %d",
+        [i(FieldNo + NumFieldValues), i(FieldNo)], Msg),
+    ColNo = 1,
+    MaybeResult = prr_error(LineNo, ColNo, FieldNo, Msg).
 process_fields(StreamName, LineNo, [Desc | Descs], [RawField | RawFields],
         FieldNo, FieldValues, MaybeResult) :-
     process_field(StreamName, Desc, RawField, FieldNo, MaybeFieldResult),
@@ -367,7 +371,7 @@ process_field(StreamName, Desc, RawField, FieldNo, MaybeResult) :-
 
 process_field_apply_actions(StreamName, Type, RawField, FieldNo,
         MaybeResult) :-
-    ( 
+    (
         Type = bool(BoolHandler, Actions),
         process_field_apply_actions_bool(BoolHandler, Actions, RawField,
             FieldNo, MaybeResult)
@@ -415,7 +419,7 @@ process_field_apply_actions(StreamName, Type, RawField, FieldNo,
 %
 
 :- pred process_field_apply_actions_bool(bool_handler::in,
-    field_actions(bool)::in, raw_field::in, field_number::in, 
+    field_actions(bool)::in, raw_field::in, field_number::in,
     process_field_result::out) is det.
 
 process_field_apply_actions_bool(BoolHandler, Actions, RawField,
@@ -441,9 +445,9 @@ process_field_apply_actions_bool(BoolHandler, Actions, RawField,
 %
 % Process int fields.
 %
-        
+
 :- pred process_field_apply_actions_int(float_int_handler::in,
-    field_actions(int)::in, raw_field::in, field_number::in, 
+    field_actions(int)::in, raw_field::in, field_number::in,
     process_field_result::out) is det.
 
 process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
@@ -458,9 +462,9 @@ process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
             ActionResult = error(ActionError),
             MaybeResult = pfr_error(LineNo, ColNo, FieldNo, ActionError)
         )
-    else 
+    else
         (
-            FloatIntHandler = do_not_allow_floats, 
+            FloatIntHandler = do_not_allow_floats,
             MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
                 "not an integer field")
         ;
@@ -484,7 +488,7 @@ process_field_apply_actions_int(FloatIntHandler, Actions, RawField,
     ).
 
 %----------------------------------------------------------------------------%
-% 
+%
 % Process float fields.
 %
 
@@ -511,7 +515,7 @@ process_field_apply_actions_float(Actions, RawField, FieldNo,
 %
 % Process float-as-string fields.
 %
-        
+
 :- pred process_field_apply_actions_floatstr(field_actions(string)::in,
     raw_field::in, field_number::in, process_field_result::out) is det.
 
@@ -788,7 +792,7 @@ process_field_apply_actions_date_time(Format, Actions, RawField, FieldNo,
                 "not a valid date-time")
         )
     ).
-    
+
 :- pred mm_dd_yyyy_hh_mm_to_date(string::in, string::in,
     list(string)::in, date::out) is semidet.
 
@@ -868,7 +872,7 @@ process_field_apply_actions_term(StreamName, Actions, RawField,
         MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
             "not a term field")
     ;
-        % Ignore the line number here since our caller will set the 
+        % Ignore the line number here since our caller will set the
         % correct one (i.e. the one from the CSV reader stream).
         ReadTerm = error(TermErrorMsg, _),
         MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
@@ -881,7 +885,7 @@ process_field_apply_actions_term(StreamName, Actions, RawField,
 %
 
 :- pred process_field_apply_actions_univ(univ_handler::in,
-    field_actions(univ)::in, raw_field::in, field_number::in, 
+    field_actions(univ)::in, raw_field::in, field_number::in,
     process_field_result::out) is det.
 
 process_field_apply_actions_univ(UnivHandler, Actions, RawField,
@@ -1002,7 +1006,7 @@ process_field_maybe(StreamName, MaybeFieldType, RawField, FieldNo,
             MaybeResult = MaybeResult0
         )
     ).
-        
+
 %-----------------------------------------------------------------------------%
 
 :- pred apply_field_actions(field_actions(T)::in,

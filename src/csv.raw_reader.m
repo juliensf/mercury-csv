@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2014 Julien Fischer.
+% Copyright (C) 2013-2015 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 
@@ -145,7 +145,7 @@ fold(Reader, Pred, !.Acc, Result, !State) :-
         Result = ok(!.Acc)
     ;
         RecordResult = error(Error),
-        Result = error(!.Acc, Error) 
+        Result = error(!.Acc, Error)
     ).
 
 fold_state(Reader, Pred, Result, !State) :-
@@ -196,7 +196,7 @@ fold_maybe_stop(Reader, Pred, !.Acc, Result, !State) :-
         Result = ok(!.Acc)
     ;
         RecordResult = error(Error),
-        Result = error(!.Acc, Error) 
+        Result = error(!.Acc, Error)
     ).
 
 fold_state_maybe_stop(Reader, Pred, Result, !State) :-
@@ -217,7 +217,7 @@ fold_state_maybe_stop(Reader, Pred, Result, !State) :-
         Result = ok
     ;
         RecordResult = error(Error),
-        Result = error(Error) 
+        Result = error(Error)
     ).
 
 fold2_state_maybe_stop(Reader, Pred, !.Acc, Result, !State) :-
@@ -238,7 +238,7 @@ fold2_state_maybe_stop(Reader, Pred, !.Acc, Result, !State) :-
         Result = ok(!.Acc)
     ;
         RecordResult = error(Error),
-        Result = error(!.Acc, Error) 
+        Result = error(!.Acc, Error)
     ).
 
 %----------------------------------------------------------------------------%

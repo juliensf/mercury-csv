@@ -1,10 +1,10 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2014 Julien Fischer.
+% Copyright (C) 2013-2015 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
-% 
+%
 % Actually, should just be named csv.parser, but since the stdlib has
 % a module by the name of parser that isn't a good idea.
 %
@@ -20,7 +20,7 @@
 :- type record_result(Error) == stream.result(raw_record, csv.error(Error)).
 
 :- pred get_next_record(client(Stream)::in, record_result(Error)::out,
-    State::di, State::uo) is det 
+    State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
         stream.putback(Stream, char, State, Error)
@@ -36,7 +36,7 @@
 % Access information about the parser client.
 %
 
-:- func get_client_stream(client(Stream)) = Stream 
+:- func get_client_stream(client(Stream)) = Stream
     <= (
         stream.line_oriented(Stream, State),
         stream.putback(Stream, char, State, Error)
@@ -77,10 +77,10 @@ get_client_field_delimiter(client_raw_reader(R)) = R ^ csv_raw_delimiter.
 % Reading raw records.
 %
 
-    % Was the last character we saw when scanning the previous field
-    % an unquoted delimiter.  
-    % We need to keep track of this information in order to handle
-    % unquoted empty trailing fields properly.
+    % Was the last character we saw when scanning the previous field an
+    % unquoted delimiter.
+    % We need to keep track of this information in order to handle unquoted
+    % empty trailing fields properly.
     %
 :- type last_seen
     --->    last_seen_start
@@ -125,8 +125,8 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
             stream.name(Stream, Name, !State),
             StartCol = Field ^ raw_field_col_no,
             Error = csv_error(
-                Name, 
-                LineNo, 
+                Name,
+                LineNo,
                 StartCol,
                 !.FieldsRead,
                 "record field limit exceeded"
@@ -135,7 +135,7 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
         else
             !:Fields = [Field | !.Fields],
             get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead,
-                !ColNo, !State) 
+                !ColNo, !State)
         )
     ;
         FieldResult = fr_error(Error),
@@ -197,7 +197,7 @@ next_raw_field(Reader, StartLineNo, FieldNo, FieldResult, !LastSeen,
         else if
             % We allow empty fields here.
             Char = get_client_field_delimiter(Reader)
-        then 
+        then
             !:LastSeen = last_seen_delimiter,
             Field = raw_field("", StartLineNo, !.ColNo),
             FieldResult = fr_field(Field)
@@ -244,7 +244,7 @@ next_quoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
                 NextGetResult = ok(NextChar),
                 increment_col_no(!ColNo),
                 % Double quotes are used to escape a quote.
-                ( if 
+                ( if
                     NextChar = ('"')
                 then
                     add(Buffer, Char, !State),
@@ -355,7 +355,7 @@ next_quoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
         Error = csv_error(Name, StartLineNo, StartColNo, FieldNo,
              "missing closing quote"),
         Result = fr_error(Error)
-    ; 
+    ;
         GetResult = error(Error),
         Result = fr_error(stream_error(Error))
     ).
@@ -383,7 +383,7 @@ next_unquoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
             FieldValue = char_buffer.to_string(Buffer, !.State),
             Field = raw_field(FieldValue, StartLineNo, StartColNo),
             Result = fr_field(Field)
-        else if 
+        else if
             Char = ('"')
         then
             stream.name(Stream, Name, !State),

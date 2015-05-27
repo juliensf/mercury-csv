@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2014 Julien Fischer.
+% Copyright (C) 2013-2015 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 %
@@ -45,7 +45,7 @@
 :- type csv.error(Error)
     --->    stream_error(Error)
             % An error has occurred in the underlying character stream.
-            
+
     ;       csv_error(
                 csv_err_name  :: stream.name,
                 csv_err_line  :: csv.line_number,
@@ -60,7 +60,7 @@
 %
 % Field delimiter selection.
 %
-    
+
     % Succeeds iff the given character cannot be used as a field delimiter.
     %
 :- pred csv.is_invalid_delimiter(char::in) is semidet.
@@ -100,7 +100,7 @@
     %
 :- type csv.field_width_limit
     --->    no_limit
-    ;       limited(int). 
+    ;       limited(int).
 
     % Should leading- and trailing-whitespace be trimmed from a field?
     %
@@ -154,9 +154,9 @@
                 % Should we trim leading- and trailing-whitespace from this
                 % field?  Such trimming is done before any other processing.
             ).
-   
+
     % Most field_types may have some actions associated with them.
-    % These actions can be used to check or transform the field value. 
+    % These actions can be used to check or transform the field value.
     % Field actions are applied in the order given and only as far as the first
     % action that returns an error.
     %
@@ -183,18 +183,18 @@
 
     ;       string(field_actions(string))
             % A Mercury string.
-          
+
     ;       date(date_format, field_actions(date))
             % A Mercury calander.date/0 value.
             % The time component of the resulting date is always set to
             % midnight.  (XXX because the standard library doesn't have type
             % that represents only dates without a time component.)
-            
+
     ;       date_time(date_time_format, field_actions(date))
             % A Mercury calander.date/0 value.
             % The time component is set as specified.
             % XXX support for this is currently very limited.
-    
+
     ;       term(field_actions({varset, term}))
             % A Mercury ground term and its corresponding varset.
 
@@ -206,7 +206,7 @@
     ;       maybe(field_type).
             % A Mercury maybe/0 value.
             % A blank field in the CSV data corresponds to maybe.no/0.
-    
+
 :- type field_action(T) == (func(T) = field_action_result(T)).
 :- type field_actions(T) == list(field_action(T)).
 
@@ -267,7 +267,7 @@
     --->    csv(
                 csv_stream_name :: stream.name,
                 csv_header      :: maybe(header),
-                csv_records     :: records 
+                csv_records     :: records
             ).
 
     % Values of this type represent a CSV header.
@@ -285,8 +285,8 @@
 
 :- type csv.records == list(record).
 
-:- type csv.field_value 
-    --->    bool(bool) 
+:- type csv.field_value
+    --->    bool(bool)
     ;       int(int)
     ;       float(float)
     ;       floatstr(string)
@@ -371,7 +371,7 @@
     csv.result(csv, io.error)::out, io::di, io::uo) is det.
 
 %----------------------------------------------------------------------------%
-% 
+%
 % Stream type class instances for CSV readers.
 %
 
@@ -462,7 +462,7 @@
     --->    raw_csv(raw_records).
 
 %----------------------------------------------------------------------------%
-% 
+%
 % Stream type class instances for CSV raw readers.
 %
 
@@ -548,17 +548,17 @@ make_error_message(Error) = Msg :-
                 csv_record_desc     :: record_desc,
                 csv_field_delimiter :: char,
                 % These fields are set directly be the user.
-                
+
                 csv_field_limit  :: record_field_limit,
                 csv_width_limit  :: field_width_limit
                 % These fields are derived from the above.
             ).
 
-init_reader(Stream, HeaderDesc, RecordDesc) = 
+init_reader(Stream, HeaderDesc, RecordDesc) =
     init_reader_delimiter(Stream, HeaderDesc, RecordDesc,
         default_field_delimiter).
 
-init_reader_delimiter(Stream, HeaderDesc, RecordDesc, FieldDelimiter) 
+init_reader_delimiter(Stream, HeaderDesc, RecordDesc, FieldDelimiter)
         = Reader :-
     list.length(RecordDesc, NumFields),
     FieldLimit = exactly(NumFields),
@@ -601,8 +601,8 @@ set_record_desc(RecordDesc, !Reader) :-
 get_max_field_width(HeaderDesc, FieldDescs) = MaxWidth :-
     (
         FieldDescs = [],
-        ( 
-            HeaderDesc = no_header,  
+        (
+            HeaderDesc = no_header,
             unexpected($file, $pred, "no fields and no header")
         ;
             % What return here will not matter since the field width limit
@@ -735,7 +735,7 @@ read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
 %----------------------------------------------------------------------------%
 %----------------------------------------------------------------------------%
 
-:- type csv.raw_reader(Stream) 
+:- type csv.raw_reader(Stream)
     --->    raw_reader(
                 csv_raw_stream      :: Stream,
                 csv_raw_field_limit :: record_field_limit,
@@ -744,8 +744,8 @@ read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
             ).
 
 %----------------------------------------------------------------------------%
-                
-init_raw_reader(Stream) = 
+
+init_raw_reader(Stream) =
     init_raw_reader(Stream, no_limit, no_limit, default_field_delimiter).
 
 init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter) =
@@ -779,7 +779,7 @@ init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter) =
 [
     ( get(Reader, Result, !State) :-
         csv.raw_reader.get_raw_record(Reader, Result, !State)
-    )   
+    )
 ].
 
 :- instance stream.reader(csv.raw_reader(Stream), csv.raw_csv, io,
