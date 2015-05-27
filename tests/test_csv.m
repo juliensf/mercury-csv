@@ -113,7 +113,7 @@ run_test_valid(OptionTable, Name, HeaderDesc, RecordDesc,
         io.open_output(OutputFileName, OutputResult, !IO),
         (
             OutputResult = ok(OutputFile),
-            Reader = init_reader(InputFile, HeaderDesc, RecordDesc),
+            csv.init_reader(InputFile, HeaderDesc, RecordDesc, Reader, !IO),
             process_csv(Reader, OutputFile, Result, !IO),
             (
                 Result = ok,
@@ -128,7 +128,7 @@ run_test_valid(OptionTable, Name, HeaderDesc, RecordDesc,
                 (
                     DiffCmdRes = ok(DiffExitStatus),
                     ( if DiffExitStatus = 0 then
-                        maybe_verbose(OptionTable, 
+                        maybe_verbose(OptionTable,
                             io.write_string("PASSED\n"), !IO),
                         lookup_bool_option(OptionTable, keep_files, KeepFiles),
                         (
@@ -142,7 +142,7 @@ run_test_valid(OptionTable, Name, HeaderDesc, RecordDesc,
                         add_failed_test(Name, !Results),
                         maybe_verbose(OptionTable,
                             io.write_string("FAILED (expected output does not match)\n"), !IO)
-                    ) 
+                    )
                 ;
                     DiffCmdRes = error(DiffError),
                     add_aborted_test(Name, !Results),
@@ -196,7 +196,7 @@ run_test_valid(OptionTable, Name, HeaderDesc, RecordDesc,
 :- pred run_test_invalid(option_table(option)::in,
     string::in, header_desc::in, record_desc::in,
     test_results::in,  test_results::out,  io::di, io::uo) is det.
-    
+
 run_test_invalid(OptionTable, Name, HeaderDesc, RecordDesc,
         !Results, !IO) :-
     InputFileName = Name ++ ".inp",
@@ -207,7 +207,7 @@ run_test_invalid(OptionTable, Name, HeaderDesc, RecordDesc,
         io.open_output(OutputFileName, OutputResult, !IO),
         (
             OutputResult = ok(OutputFile),
-            Reader = init_reader(InputFile, HeaderDesc, RecordDesc),
+            csv.init_reader(InputFile, HeaderDesc, RecordDesc, Reader, !IO),
             process_csv(Reader, OutputFile, Result, !IO),
             (
                 Result = error(ProcessCSV_Error),

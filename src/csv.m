@@ -312,11 +312,11 @@
 % CSV reader creation and access.
 %
 
-    % csv.init_reader(Stream, HeaderDesc, RecordDesc) = Reader:
+    % csv.init_reader(Stream, HeaderDesc, RecordDesc, Reader, !State):
     % Use the default field delimiter.
     %
-:- func csv.init_reader(Stream, header_desc, record_desc)
-    = csv.reader(Stream)
+:- pred csv.init_reader(Stream::in, header_desc::in, record_desc::in,
+    csv.reader(Stream)::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
         stream.putback(Stream, char, State, Error)
@@ -325,8 +325,8 @@
     % As above, but use the specified field delimiter character instead
     % of ','.
     %
-:- func csv.init_reader_delimiter(Stream, header_desc, record_desc, char)
-    = csv.reader(Stream)
+:- pred csv.init_reader_delimiter(Stream::in, header_desc::in, record_desc::in,
+    char::in, csv.reader(Stream)::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
         stream.putback(Stream, char, State, Error)
@@ -420,14 +420,16 @@
     %
 :- type csv.raw_reader(Stream).
 
-:- func csv.init_raw_reader(Stream) = csv.raw_reader(Stream)
+:- pred csv.init_raw_reader(Stream::in, csv.raw_reader(Stream)::out,
+    State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, io),
         stream.putback(Stream, char, io, Error)
     ).
 
-:- func csv.init_raw_reader(Stream, record_field_limit,
-    field_width_limit, char) = csv.raw_reader(Stream)
+:- pred csv.init_raw_reader(Stream::in, record_field_limit::in,
+    field_width_limit::in, char::in, csv.raw_reader(Stream)::out,
+    State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, io),
         stream.putback(Stream, char, io, Error)
@@ -554,12 +556,12 @@ make_error_message(Error) = Msg :-
                 % These fields are derived from the above.
             ).
 
-init_reader(Stream, HeaderDesc, RecordDesc) =
+init_reader(Stream, HeaderDesc, RecordDesc, Reader, !State) :-
     init_reader_delimiter(Stream, HeaderDesc, RecordDesc,
-        default_field_delimiter).
+        default_field_delimiter, Reader, !State).
 
-init_reader_delimiter(Stream, HeaderDesc, RecordDesc, FieldDelimiter)
-        = Reader :-
+init_reader_delimiter(Stream, HeaderDesc, RecordDesc, FieldDelimiter, Reader,
+        !State) :-
     list.length(RecordDesc, NumFields),
     FieldLimit = exactly(NumFields),
     WidthLimit = get_max_field_width(HeaderDesc, RecordDesc),
@@ -658,7 +660,7 @@ read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
     io.open_input(FileName, OpenFileResult, !IO),
     (
         OpenFileResult = ok(File),
-        Reader = init_reader(File, HeaderDesc, RecordDesc),
+        init_reader(File, HeaderDesc, RecordDesc, Reader, !IO),
         get(Reader, Result, !IO),
         (
             ( Result = ok(_)
@@ -745,11 +747,12 @@ read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
 
 %----------------------------------------------------------------------------%
 
-init_raw_reader(Stream) =
-    init_raw_reader(Stream, no_limit, no_limit, default_field_delimiter).
+init_raw_reader(Stream, Reader, !State) :-
+    init_raw_reader(Stream, no_limit, no_limit, default_field_delimiter,
+        Reader, !State).
 
-init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter) =
-        Reader :-
+init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
+        !State) :-
     ( if is_invalid_delimiter(FieldDelimiter)
     then throw(invalid_field_delimiter_error(FieldDelimiter))
     else true
