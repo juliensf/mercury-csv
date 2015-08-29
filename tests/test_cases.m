@@ -44,13 +44,13 @@
 
 tests = [
     test_case(
-        test_type_valid, 
+        test_type_valid,
         "bool1",
-        no_header, 
+        no_header,
         [
             field_desc(bool(tf_to_bool, []), no_limit, do_not_trim_whitespace),
             field_desc(bool(tf_to_bool, [negate_bool]), no_limit, do_not_trim_whitespace)
-        ]  
+        ]
     ),
 
     % As above, but allow whitespace trimming.
@@ -61,9 +61,9 @@ tests = [
         [
             field_desc(bool(tf_to_bool, []), no_limit, trim_whitespace),
             field_desc(bool(tf_to_bool, [negate_bool]), no_limit, trim_whitespace)
-        ]  
+        ]
     ),
-    
+
     % As above, but with quoted values.
     test_case(
         test_type_valid,
@@ -72,9 +72,9 @@ tests = [
         [
             field_desc(bool(tf_to_bool, []), no_limit, trim_whitespace),
             field_desc(bool(tf_to_bool, [negate_bool]), no_limit, trim_whitespace)
-        ]  
+        ]
     ),
-    
+
     % As above, but with a header.
     test_case(
         test_type_valid,
@@ -83,7 +83,7 @@ tests = [
         [
             field_desc(bool(tf_to_bool, []), no_limit, trim_whitespace),
             field_desc(bool(tf_to_bool, [negate_bool]), no_limit, trim_whitespace)
-        ]  
+        ]
     ),
 
     test_case(
@@ -111,7 +111,7 @@ tests = [
             field_desc(string([]), limited(4), do_not_trim_whitespace)
         ]
     ),
-    
+
     test_case(
         test_type_valid,
         "regression3",
@@ -134,7 +134,7 @@ tests = [
             field_desc(string([]), no_limit, do_not_trim_whitespace)
         ]
     ),
-    
+
     test_case(
         test_type_invalid,
         "regression4-bad",
@@ -151,7 +151,7 @@ tests = [
         "real1",
         header_desc(limited(255)),
         [
-           field_desc(string([]), limited(100), trim_whitespace), 
+           field_desc(string([]), limited(100), trim_whitespace),
            field_desc(float([]), limited(30), trim_whitespace),
            field_desc(float([]), limited(30), trim_whitespace)
         ]
@@ -174,7 +174,7 @@ tests = [
             field_desc(date(dd_mm_yyyy("/"), []), limited(255), trim_whitespace),
             field_desc(date(dd_mm_yyyy("/"), []), limited(255), trim_whitespace),
             field_desc(
-                string([require_task_type]), 
+                string([require_task_type]),
                 limited(30),
                 trim_whitespace
             )
@@ -216,7 +216,7 @@ tests = [
             field_desc(date(mm_dd_yyyy(","), []), limited(10), do_not_trim_whitespace)
         ]
     ),
-    
+
     test_case(
         test_type_valid,
         "date2",
@@ -316,7 +316,7 @@ tests = [
             field_desc(string([]), no_limit, do_not_trim_whitespace)
         ]
     ),
-    
+
     test_case(
         test_type_invalid,
         "unmatched_quote3",
@@ -336,7 +336,7 @@ tests = [
             field_desc(string([]), limited(3), do_not_trim_whitespace)
         ]
     ),
-    
+
     test_case(
         test_type_invalid,
         "width_limit2",
@@ -357,7 +357,7 @@ tests = [
             field_desc(term([]), no_limit, do_not_trim_whitespace)
         ]
     ),
-    
+
     test_case(
         test_type_invalid,
         "invalid_term",
@@ -367,7 +367,7 @@ tests = [
             field_desc(term([]), no_limit, do_not_trim_whitespace)
         ]
     ),
-    
+
     test_case(
         test_type_valid,
         "univ",
@@ -446,7 +446,7 @@ tests = [
         "field_desc_mismatch",
         no_header,
         [
-            field_desc(int(do_not_allow_floats, []), no_limit, do_not_trim_whitespace), 
+            field_desc(int(do_not_allow_floats, []), no_limit, do_not_trim_whitespace),
             field_desc(int(do_not_allow_floats, []), no_limit, do_not_trim_whitespace)
         ]
     )
@@ -458,7 +458,7 @@ tests = [
 
 :- func require_non_negative(int) = field_action_result(int).
 
-require_non_negative(I) = 
+require_non_negative(I) =
     ( if I < 0 then error("negative frequency") else ok(I)).
 
 :- func require_task_type(string) = field_action_result(string).
@@ -475,7 +475,7 @@ is_task_lov("SO&M").
 
 :- func require_industry_group(string) = field_action_result(string).
 
-require_industry_group(S) = 
+require_industry_group(S) =
     ( if is_industry_group(S) then
         ok(S)
     else

@@ -55,3 +55,8 @@ To run the regression test suite, do:
 * write some samples
 * write some more documentation
 * support CSV writers as well as readers
+
+
+## AUTHOR
+
+Julien Fischer <juliensf@gmail.com>

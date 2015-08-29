@@ -48,7 +48,7 @@ process_csv(Reader, OutFile, Result, !IO) :-
                 1,
                 "unexpected EOF in header"
             ),
-            Result = error(HeaderError) 
+            Result = error(HeaderError)
         ;
             HeaderResult = error(HeaderError),
             Result = error(HeaderError)
@@ -87,10 +87,10 @@ write_quoted_string(String, !IO) :-
 %-----------------------------------------------------------------------------%
 
 :- pred write_record(io.text_output_stream::in, record::in,
-	io::di, io::uo) is det.
+    io::di, io::uo) is det.
 
 write_record(File, Record, !IO) :-
-	Record = record(_LineNo, Fields),
+    Record = record(_LineNo, Fields),
     io.write_list(File, Fields, ",", write_field_value, !IO),
     io.nl(File, !IO).
 

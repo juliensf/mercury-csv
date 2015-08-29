@@ -237,7 +237,7 @@ run_test_invalid(OptionTable, Name, HeaderDesc, RecordDesc,
                         (
                             DiffCmdRes = ok(DiffExitStatus),
                             ( if DiffExitStatus = 0 then
-                                maybe_verbose(OptionTable, 
+                                maybe_verbose(OptionTable,
                                     io.write_string("PASSED\n"), !IO),
                                 lookup_bool_option(OptionTable, keep_files, KeepFiles),
                                 (
@@ -253,7 +253,7 @@ run_test_invalid(OptionTable, Name, HeaderDesc, RecordDesc,
                                 maybe_verbose(OptionTable,
                                     io.write_string(
                                     "FAILED (expected error output does not match)\n"), !IO)
-                            ) 
+                            )
                         ;
                             DiffCmdRes = error(DiffError),
                             add_aborted_test(Name, !Results),
@@ -261,8 +261,7 @@ run_test_invalid(OptionTable, Name, HeaderDesc, RecordDesc,
                             maybe_verbose(OptionTable,
                                 io.format("ABORTED (diff: %s)\n",
                                     [s(DiffErrMsg)]), !IO)
-                        ) 
-
+                        )
                     ;
                         ErrFileResult = error(IO_Error),
                         add_aborted_test(Name, !Results),
@@ -333,7 +332,7 @@ print_results(Results, !IO) :-
     list.length(Aborted, NumAborted),
     ( if NumFailed = 0, NumAborted = 0 then
         io.write_string("ALL TESTS PASSED\n", !IO)
-    else 
+    else
         ( if NumFailed > 0 then
             io.write_string("SOME TESTS FAILED\n", !IO),
             write_tests_to_file(Failed, "FAILED_TESTS", !IO)
@@ -440,7 +439,7 @@ bad_cmdline(Msg, !IO) :-
 write_csv_error(File, Name, LineNo, ColNo, FieldNo, Msg, !IO) :-
     io.format(File, "%s:%d:%d: error: in field #%d, %s\n",
         [s(Name), i(LineNo), i(ColNo), i(FieldNo), s(Msg)], !IO).
-            
+
 %-----------------------------------------------------------------------------%
 
 :- pred help(io::di, io::uo) is det.
