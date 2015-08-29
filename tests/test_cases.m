@@ -349,27 +349,6 @@ tests = [
 
     test_case(
         test_type_valid,
-        "term",
-        no_header,
-        [
-            field_desc(term([]), no_limit, do_not_trim_whitespace),
-            field_desc(term([]), no_limit, do_not_trim_whitespace),
-            field_desc(term([]), no_limit, do_not_trim_whitespace)
-        ]
-    ),
-
-    test_case(
-        test_type_invalid,
-        "invalid_term",
-        no_header,
-        [
-            field_desc(term([]), no_limit, do_not_trim_whitespace),
-            field_desc(term([]), no_limit, do_not_trim_whitespace)
-        ]
-    ),
-
-    test_case(
-        test_type_valid,
         "univ",
         no_header,
         [
@@ -428,16 +407,6 @@ tests = [
         [
             field_desc(maybe(int(do_not_allow_floats, [])), no_limit, do_not_trim_whitespace),
             field_desc(maybe(int(do_not_allow_floats, [])), no_limit, do_not_trim_whitespace)
-        ]
-    ),
-
-    test_case(
-        test_type_valid,
-        "maybe_term",
-        no_header,
-        [
-            field_desc(maybe(term([])), no_limit, do_not_trim_whitespace),
-            field_desc(maybe(term([])), no_limit, do_not_trim_whitespace)
         ]
     ),
 

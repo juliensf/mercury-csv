@@ -1,4 +1,0 @@
-"yes(functor(atom("foo"), [functor(integer(1), [], context("maybe_term.inp", 1))], context("maybe_term.inp", 1)))","yes(functor(atom("bar"), [functor(integer(2), [], context("maybe_term.inp", 1))], context("maybe_term.inp", 1)))"
-"no","yes(functor(atom("bar"), [functor(integer(3), [], context("maybe_term.inp", 1))], context("maybe_term.inp", 2)))"
-"yes(functor(atom("foo"), [functor(integer(4), [], context("maybe_term.inp", 1))], context("maybe_term.inp", 3)))","no"
-"no","no"

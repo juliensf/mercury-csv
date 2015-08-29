@@ -26,8 +26,6 @@
 :- import_module list.
 :- import_module maybe.
 :- import_module stream.
-:- import_module term.
-:- import_module varset.
 :- import_module univ.
 
 %----------------------------------------------------------------------------%
@@ -195,9 +193,6 @@
             % The time component is set as specified.
             % XXX support for this is currently very limited.
 
-    ;       term(field_actions({varset, term}))
-            % A Mercury ground term and its corresponding varset.
-
     ;       univ(univ_handler, field_actions(univ))
             % A Mercury univ/0 value.
             % The user provided "univ_handler" function is responsible for
@@ -293,7 +288,6 @@
     ;       string(string)
     ;       date(date)
     ;       date_time(date)
-    ;       term(varset, term)
     ;       univ(univ)
     ;       maybe_bool(maybe(bool))
     ;       maybe_int(maybe(int))
@@ -302,7 +296,6 @@
     ;       maybe_string(maybe(string))
     ;       maybe_date(maybe(date))
     ;       maybe_date_time(maybe(date))
-    ;       maybe_term(maybe({varset, term}))
     ;       maybe_univ(maybe(univ)).
 
 :- type csv.field_values == list(csv.field_value).

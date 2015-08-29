@@ -116,7 +116,6 @@
 :- import_module float.
 :- import_module parser.
 :- import_module require.
-:- import_module term_io.
 
 %-----------------------------------------------------------------------------%
 
@@ -399,10 +398,6 @@ process_field_apply_actions(StreamName, Type, RawField, FieldNo,
         Type = date_time(Format, Actions),
         process_field_apply_actions_date_time(Format, Actions, RawField,
             FieldNo, MaybeResult)
-    ;
-        Type = term(Actions),
-        process_field_apply_actions_term(StreamName, Actions,
-            RawField, FieldNo, MaybeResult)
     ;
         Type = univ(UnivHandler, Actions),
         process_field_apply_actions_univ(UnivHandler, Actions, RawField,
@@ -830,56 +825,6 @@ dd_mm_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
     calendar.init_date(Year, Month, Day, Hour, Minute, 0, 0, DateTime).
 
 %----------------------------------------------------------------------------%
-
-:- pred process_field_apply_actions_term(stream.name::in,
-    field_actions({varset, term})::in, raw_field::in, field_number::in,
-    process_field_result::out) is det.
-
-process_field_apply_actions_term(StreamName, Actions, RawField,
-        FieldNo, MaybeResult) :-
-    RawField = raw_field(FieldValue, LineNo, ColNo),
-    parser.read_term_from_string(StreamName, FieldValue, _EndPos, ReadTerm),
-    (
-        ReadTerm = term(Varset, Term0),
-        % XXX fix up the line number in the context so it matches that
-        % of the line we just read from the CSV reader.
-        % The standard library's parser module does not (yet) allow us
-        % to set the line number when reading from a string.
-        (
-            Term0 = functor(F, Args, Context0),
-            Context0 = term.context(File, _),
-            Context = term.context(File, LineNo),
-            Term = functor(F, Args, Context)
-        ;
-            Term0 = variable(Var, Context0),
-            Context0 = term.context(File, _),
-            Context = term.context(File, LineNo),
-            Term = variable(Var, Context)
-        ),
-        apply_field_actions(Actions, {Varset, Term}, ActionResult),
-        (
-            ActionResult = ok({VarsetPrime, TermPrime}),
-            MaybeResult = pfr_ok(term(VarsetPrime, TermPrime))
-        ;
-            ActionResult = error(ActionError),
-            MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
-                ActionError)
-        )
-    ;
-        % XXX I don't think this can occur when reading a term
-        % from a string.
-        ReadTerm = eof,
-        MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
-            "not a term field")
-    ;
-        % Ignore the line number here since our caller will set the
-        % correct one (i.e. the one from the CSV reader stream).
-        ReadTerm = error(TermErrorMsg, _),
-        MaybeResult = pfr_error(LineNo, ColNo, FieldNo,
-            TermErrorMsg)
-    ).
-
-%----------------------------------------------------------------------------%
 %
 % Process univ fields.
 %
@@ -941,9 +886,6 @@ process_field_maybe(StreamName, MaybeFieldType, RawField, FieldNo,
             MaybeFieldType = date_time(_, _),
             MaybeResult = pfr_ok(maybe_date_time(no))
         ;
-            MaybeFieldType = term(_),
-            MaybeResult = pfr_ok(maybe_term(no))
-        ;
             MaybeFieldType = univ(_, _),
             MaybeResult = pfr_ok(maybe_univ(no))
         ;
@@ -977,9 +919,6 @@ process_field_maybe(StreamName, MaybeFieldType, RawField, FieldNo,
                 MaybeValue = date_time(DateTime),
                 MaybeResult = pfr_ok(maybe_date_time(yes(DateTime)))
             ;
-                MaybeValue = term(Varset, Term),
-                MaybeResult = pfr_ok(maybe_term(yes({Varset, Term})))
-            ;
                 MaybeValue = univ(Univ),
                 MaybeResult = pfr_ok(maybe_univ(yes(Univ)))
             ;
@@ -990,7 +929,6 @@ process_field_maybe(StreamName, MaybeFieldType, RawField, FieldNo,
                 ; MaybeValue = maybe_string(_)
                 ; MaybeValue = maybe_date(_)
                 ; MaybeValue = maybe_date_time(_)
-                ; MaybeValue = maybe_term(_)
                 ; MaybeValue = maybe_univ(_)
                 ),
                 unexpected($file, $pred, "nested maybes in field values")

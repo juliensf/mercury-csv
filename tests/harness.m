@@ -120,9 +120,6 @@ write_field_value(Value, !IO) :-
         Value = date_time(DateTime),
         io.write(DateTime, !IO)
     ;
-        Value = term(_Varset, Term),
-        io.write(Term, !IO)
-    ;
         Value = univ(Univ),
         io.write(Univ, !IO)
     ;
@@ -146,15 +143,6 @@ write_field_value(Value, !IO) :-
     ;
         Value = maybe_date_time(MaybeDateTime),
         io.write(MaybeDateTime, !IO)
-    ;
-        Value = maybe_term(MaybeTerm),
-        (
-            MaybeTerm = yes({_, Term}),
-            io.write(yes(Term), !IO)
-        ;
-            MaybeTerm = no,
-            io.write(MaybeTerm, !IO)
-        )
     ;
         Value = maybe_univ(MaybeUniv),
         io.write(MaybeUniv, !IO)
