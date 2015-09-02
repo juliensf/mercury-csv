@@ -416,16 +416,16 @@
 :- pred csv.init_raw_reader(Stream::in, csv.raw_reader(Stream)::out,
     State::di, State::uo) is det
     <= (
-        stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.line_oriented(Stream, State),
+        stream.putback(Stream, char, State, Error)
     ).
 
 :- pred csv.init_raw_reader(Stream::in, record_field_limit::in,
     field_width_limit::in, char::in, csv.raw_reader(Stream)::out,
     State::di, State::uo) is det
     <= (
-        stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.line_oriented(Stream, State),
+        stream.putback(Stream, char, State, Error)
     ).
 
 :- type csv.raw_record
