@@ -5,7 +5,7 @@
 % Author: Julien Fischer <juliensf@gmail.com>
 %
 % A small example of how to use the CSV reader.
-% 
+%
 %-----------------------------------------------------------------------------%
 
 :- module csv_ex.
@@ -66,19 +66,19 @@ process_csv(InputFile, !IO) :-
 
     % A CSV header descriptor (type: csv.header_desc/0) tells the CSV reader
     % whether we expect the file to have a header line and, if so, is there
-    % any field width limit for the header fields? 
+    % any field width limit for the header fields?
     %
     % Here we expect the presence of an initial header line and limit the
     % width of the header fields to at most 255 characters.
     %
-    HeaderDesc = csv.header_desc(limited(255)), 
-   
+    HeaderDesc = csv.header_desc(limited(255)),
+
     % A CSV record descriptor (type: csv.record_desc/0) describes the structure
     % of a record (i.e. a single line) in the CSV data.  It is a list of
     % field descriptors (type: csv.field_desc/0), where the order of the elements
     % in the list corresponds to the order of the fields in the record.
     %
-    RecordDesc = [ 
+    RecordDesc = [
 
         % This field descriptor tells the CSV reader to expect the first field
         % to be an integer.  The "do_not_allow_floats" parameter tells the
@@ -124,7 +124,7 @@ process_csv(InputFile, !IO) :-
         % XXX TODO - document me.
         %
         field_desc(string([]), no_limit, do_not_trim_whitespace),
-        
+
         % XXX TODO - document me.
         %
         field_desc(float([]), limited(20), do_not_trim_whitespace)
@@ -132,7 +132,7 @@ process_csv(InputFile, !IO) :-
 
     % Create the CSV reader.
     %
-    Reader = csv.init_reader(InputFile, HeaderDesc, RecordDesc), 
+    csv.init_reader(InputFile, HeaderDesc, RecordDesc, Reader, !IO),
 
     % Read in the entire CSV file.
     % Since CSV readers are instances of the standard library's stream
