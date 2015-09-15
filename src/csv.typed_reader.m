@@ -623,7 +623,7 @@ yyyy_mm_dd_to_date(ComponentStrs, DateTime) :-
     string.to_int(YearStr, Year),
     string.to_int(MonthStr, MonthNum),
     string.to_int(DayStr, Day),
-    % XXX The stdlib now provide int_to_month.
+    % XXX The stdlib now provides int_to_month.
     csv.typed_reader.int_to_month(MonthNum, Month),
     calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
 

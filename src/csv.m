@@ -33,9 +33,9 @@
 % CSV errors.
 %
 
-:- type csv.line_number == int.
-:- type csv.column_number == int.
-:- type csv.field_number == int.
+:- type line_number == int.
+:- type column_number == int.
+:- type field_number == int.
 
     % This type describes errors that can occur while processing a CSV
     % stream.
@@ -46,9 +46,9 @@
 
     ;       csv_error(
                 csv_err_name  :: stream.name,
-                csv_err_line  :: csv.line_number,
-                csv_err_col   :: csv.column_number,
-                csv_err_field :: csv.field_number,
+                csv_err_line  :: line_number,
+                csv_err_col   :: column_number,
+                csv_err_field :: field_number,
                 csv_err_msg   :: string
             ).
             % There is an error in the structure of the CSV file or
@@ -61,12 +61,12 @@
 
     % Succeeds iff the given character cannot be used as a field delimiter.
     %
-:- pred csv.is_invalid_delimiter(char::in) is semidet.
+:- pred is_invalid_delimiter(char::in) is semidet.
 
     % Exceptions of this type are thrown if an invalid field delimiter
-    % is passed to one of the reader initialisation functions below.
+    % is passed to one of the reader initialization functions below.
     %
-:- type csv.invalid_field_delimiter_error
+:- type invalid_field_delimiter_error
     --->    invalid_field_delimiter_error(char).
 
 %----------------------------------------------------------------------------%
@@ -88,7 +88,7 @@
     % What limit, if any, is imposed on the number of fields that may
     % appear in a record.
     %
-:- type csv.record_field_limit
+:- type record_field_limit
     --->    no_limit
     ;       exactly(int).
 
@@ -96,13 +96,13 @@
     % appear in a field.  This limit is exclusive of the quote characters
     % for quoted fields.
     %
-:- type csv.field_width_limit
+:- type field_width_limit
     --->    no_limit
     ;       limited(int).
 
     % Should leading- and trailing-whitespace be trimmed from a field?
     %
-:- type csv.trim_whitespace
+:- type trim_whitespace
     --->    trim_whitespace
     ;       do_not_trim_whitespace.
 
@@ -115,20 +115,20 @@
     % optionally applies some post-processing to the field values and then
     % returns the field values as lists of Mercury data types.
     %
-:- type csv.reader(Stream).
+:- type reader(Stream).
 
     % This type specifies whether the CSV data begins with a header line
     % or not.
     %
-:- type csv.header_desc
+:- type header_desc
     --->    no_header
     ;       header_desc(
                 header_width_limit :: field_width_limit
             ).
 
-:- type csv.record_desc == list(field_desc).
+:- type record_desc == list(field_desc).
 
-:- type csv.field_desc
+:- type field_desc
     --->    discard(field_width_limit)
             % The field should be discarded and not returned as part of the
             % records.  Note that if there is a field width limit it will still
@@ -252,6 +252,22 @@
 
 %----------------------------------------------------------------------------%
 %
+% Convenience functions for common field types.
+%
+
+% The following all create field_desc that have no width limit, will cause
+% whitespace to be trimmed and will not apply any field actions.
+
+:- func float_field_desc = field_desc.
+:- func floatstr_field_desc = field_desc.
+:- func string_field_desc = field_desc.
+
+    % NOTE: the field desc returned by this function will not allow floats.
+    %
+:- func int_field_desc = field_desc.
+
+%----------------------------------------------------------------------------%
+%
 % CSV data.
 %
 
@@ -267,20 +283,20 @@
 
     % Values of this type represent a CSV header.
     %
-:- type csv.header
+:- type header
     --->    header(list(string)).
 
     % Values of this type represent a CSV record.
     %
-:- type csv.record
+:- type record
     --->    record(
                 record_line_no :: line_number,
                 record_fields  :: field_values
             ).
 
-:- type csv.records == list(record).
+:- type records == list(record).
 
-:- type csv.field_value
+:- type field_value
     --->    bool(bool)
     ;       int(int)
     ;       float(float)
@@ -298,18 +314,18 @@
     ;       maybe_date_time(maybe(date))
     ;       maybe_univ(maybe(univ)).
 
-:- type csv.field_values == list(csv.field_value).
+:- type field_values == list(field_value).
 
 %----------------------------------------------------------------------------%
 %
 % CSV reader creation and access.
 %
 
-    % csv.init_reader(Stream, HeaderDesc, RecordDesc, Reader, !State):
+    % init_reader(Stream, HeaderDesc, RecordDesc, Reader, !State):
     % Use the default field delimiter.
     %
-:- pred csv.init_reader(Stream::in, header_desc::in, record_desc::in,
-    csv.reader(Stream)::out, State::di, State::uo) is det
+:- pred init_reader(Stream::in, header_desc::in, record_desc::in,
+    reader(Stream)::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
         stream.putback(Stream, char, State, Error)
@@ -318,16 +334,93 @@
     % As above, but use the specified field delimiter character instead
     % of ','.
     %
-:- pred csv.init_reader_delimiter(Stream::in, header_desc::in, record_desc::in,
-    char::in, csv.reader(Stream)::out, State::di, State::uo) is det
+:- pred init_reader_delimiter(Stream::in, header_desc::in, record_desc::in,
+    char::in, reader(Stream)::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
         stream.putback(Stream, char, State, Error)
     ).
 
+%----------------------------------------------------------------------------%
+%
+% Intializing readers from the header.
+%
+
+% The predicates in this section create CSV readers by reading in the header
+% line from some CSV data and then calling a user-defined predicate to generate
+% a field descriptor from each header field.
+
+:- type init_from_header_result(Stream, Error)
+    --->    ok(reader(Stream), header)
+    ;       eof
+    ;       error(csv.error(Error)).
+
+:- type header_to_field_pred(State)
+    == pred(string, line_number, column_number, field_desc, State, State).
+:- inst header_to_field_pred == (pred(in, in, in, out, di, uo) is det).
+
+    % init_reader_from_header(Stream, HeaderToField, Result, !State):
+    % Initialize a CSV reader from Stream using the predicate HeaderToField
+    % to creating a field descriptor corresponding to each header field.
+    %
+:- pred init_reader_from_header(Stream::in,
+    header_to_field_pred(State)::in(header_to_field_pred),
+    init_from_header_result(Stream, Error)::out,
+    State::di, State::uo) is det
+    <= (
+        stream.line_oriented(Stream, State),
+        stream.putback(Stream, char, State, Error)
+    ).
+
+    % init_reader_from_header(Stream, Params, HeaderToField, Result, !State):
+    %
+    % As above but use the raw reader parameters (see 'CSV raw readers' below)
+    % in Params when reading in the the header record.  The CSV reader returned
+    % will inherit the field delimiter character from Params.
+    %
+:- pred init_reader_from_header(Stream::in, raw_reader_params::in,
+    header_to_field_pred(State)::in(header_to_field_pred),
+    init_from_header_result(Stream, Error)::out, State::di, State::uo) is det
+    <= (
+        stream.line_oriented(Stream, State),
+        stream.putback(Stream, char, State, Error)
+    ).
+
+%
+% The '_foldl' versions are similar to the above but have an extra accumulator
+% argument threaded through them.
+%
+
+:- type header_to_field_foldl_pred(Acc, State) ==
+    pred(string, line_number, column_number, field_desc, Acc, Acc, State, State).
+:- inst header_to_field_foldl_pred ==
+    (pred(in, in, in, out, in, out, di, uo) is det).
+
+:- pred init_reader_from_header_foldl(Stream::in,
+    header_to_field_foldl_pred(Acc, State)::in(header_to_field_foldl_pred),
+    init_from_header_result(Stream, Error)::out,
+    Acc::in, Acc::out, State::di, State::uo) is det
+    <= (
+        stream.line_oriented(Stream, State),
+        stream.putback(Stream, char, State, Error)
+    ).
+
+:- pred init_reader_from_header_foldl(Stream::in, raw_reader_params::in,
+    header_to_field_foldl_pred(Acc, State)::in(header_to_field_foldl_pred),
+    init_from_header_result(Stream, Error)::out,
+    Acc::in, Acc::out, State::di, State::uo) is det
+    <= (
+        stream.line_oriented(Stream, State),
+        stream.putback(Stream, char, State, Error)
+    ).
+
+%----------------------------------------------------------------------------%
+%
+% Get / set reader properties.
+%
     % Get the underlying stream.
     %
-:- func get_stream(csv.reader(Stream)) = Stream
+:- func get_stream(reader(Stream)) = Stream
     <= (
         stream.line_oriented(Stream, State),
         stream.putback(Stream, char, State, Error)
@@ -335,26 +428,26 @@
 
     % Get and set the field delimiter.
     %
-:- func get_field_delimiter(csv.reader(Stream)) = char.
+:- func get_field_delimiter(reader(Stream)) = char.
 :- pred set_field_delimiter(char::in,
-    csv.reader(Stream)::in, csv.reader(Stream)::out) is det.
+    reader(Stream)::in, reader(Stream)::out) is det.
 
     % Get and set the header descriptor.
     %
-:- func get_header_desc(csv.reader(Stream)) = header_desc.
+:- func get_header_desc(reader(Stream)) = header_desc.
 :- pred set_header_desc(header_desc::in,
-    csv.reader(Stream)::in, csv.reader(Stream)::out) is det.
+    reader(Stream)::in, reader(Stream)::out) is det.
 
     % Get and set the record descriptor.
     %
-:- func get_record_desc(csv.reader(Stream)) = record_desc.
+:- func get_record_desc(reader(Stream)) = record_desc.
 :- pred set_record_desc(record_desc::in,
-    csv.reader(Stream)::in, csv.reader(Stream)::out) is det.
+    reader(Stream)::in, reader(Stream)::out) is det.
 
     % Succeeds iff the given CSV reader has been configured to expect a CSV
     % header.
     %
-:- pred has_header(csv.reader(Stream)::in) is semidet.
+:- pred has_header(reader(Stream)::in) is semidet.
 
     % read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO):
     % Open the text file FileName and read CSV data as per the given header and
@@ -375,29 +468,29 @@
 
 :- instance stream.error(csv.error(Error)) <= stream.error(Error).
 
-:- instance stream.stream(csv.reader(Stream), io) <= stream.stream(Stream, io).
+:- instance stream.stream(reader(Stream), io) <= stream.stream(Stream, io).
 
-:- instance stream.input(csv.reader(Stream), io) <= stream.input(Stream, io).
+:- instance stream.input(reader(Stream), io) <= stream.input(Stream, io).
 
-:- instance stream.reader(csv.reader(Stream), csv.record, io, csv.error(Error))
+:- instance stream.reader(reader(Stream), record, io, csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
         stream.putback(Stream, char, io, Error)
     ).
 
-:- instance stream.reader(csv.reader(Stream), csv.header, io, csv.error(Error))
+:- instance stream.reader(reader(Stream), header, io, csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
         stream.putback(Stream, char, io, Error)
     ).
 
-:- instance stream.reader(csv.reader(Stream), csv.csv, io, csv.error(Error))
+:- instance stream.reader(reader(Stream), csv, io, csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
         stream.putback(Stream, char, io, Error)
     ).
 
-:- instance stream.line_oriented(csv.reader(Stream), io)
+:- instance stream.line_oriented(reader(Stream), io)
     <= (
         stream.line_oriented(Stream, io)
     ).
@@ -405,30 +498,45 @@
 %----------------------------------------------------------------------------%
 %----------------------------------------------------------------------------%
 %
-% CSV raw reader.
+% CSV raw readers.
 %
 
     % A CSV raw reader gets CSV records from an underlying character stream
     % and returns them as lists of strings.
     %
-:- type csv.raw_reader(Stream).
+:- type raw_reader(Stream).
 
-:- pred csv.init_raw_reader(Stream::in, csv.raw_reader(Stream)::out,
+:- type raw_reader_params
+    --->    raw_reader_params(
+                raw_record_field_limit :: record_field_limit,
+                raw_field_width_limit  :: field_width_limit,
+                raw_field_delimiter    :: char
+            ).
+
+:- pred init_raw_reader(Stream::in, raw_reader(Stream)::out,
     State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
         stream.putback(Stream, char, State, Error)
     ).
 
-:- pred csv.init_raw_reader(Stream::in, record_field_limit::in,
-    field_width_limit::in, char::in, csv.raw_reader(Stream)::out,
+:- pred init_raw_reader(Stream::in, raw_reader_params::in,
+    raw_reader(Stream)::out, State::di, State::uo) is det
+    <= (
+        stream.line_oriented(Stream, State),
+        stream.putback(Stream, char, State, Error)
+    ).
+
+:- pragma obsolete(init_raw_reader/7).
+:- pred init_raw_reader(Stream::in, record_field_limit::in,
+    field_width_limit::in, char::in, raw_reader(Stream)::out,
     State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
         stream.putback(Stream, char, State, Error)
     ).
 
-:- type csv.raw_record
+:- type raw_record
     --->    raw_record(
                 raw_record_line_no :: line_number,
                 % The starting line number for this record.
@@ -437,9 +545,9 @@
                 % The fields for this record.
             ).
 
-:- type csv.raw_records == list(raw_record).
+:- type raw_records == list(raw_record).
 
-:- type csv.raw_field
+:- type raw_field
     --->    raw_field(
                 raw_field_value   :: string,
                 % The value of of this field as a string.
@@ -451,9 +559,9 @@
                 % The starting column number for this field.
             ).
 
-:- type csv.raw_fields == list(raw_field).
+:- type raw_fields == list(raw_field).
 
-:- type csv.raw_csv
+:- type raw_csv
     --->    raw_csv(raw_records).
 
 %----------------------------------------------------------------------------%
@@ -464,22 +572,22 @@
 % XXX these should be polymorphic in the stream state type, but unfortunately
 % restrictions in the type class system mean this is not currently possible.
 % The sub-module csv.raw_reader contains predicates that mirror the
-% standard stream predicates but which will work for arbitrary stream state.
+% standard stream predicates but which will work for arbitrary stream states.
 
-:- instance stream.stream(csv.raw_reader(Stream), io)
+:- instance stream.stream(raw_reader(Stream), io)
     <= stream.stream(Stream, io).
 
-:- instance stream.input(csv.raw_reader(Stream), io)
+:- instance stream.input(raw_reader(Stream), io)
     <= stream.input(Stream, io).
 
-:- instance stream.reader(csv.raw_reader(Stream), csv.raw_record, io,
+:- instance stream.reader(raw_reader(Stream), raw_record, io,
         csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
         stream.putback(Stream, char, io, Error)
     ).
 
-:- instance stream.reader(csv.raw_reader(Stream), csv.raw_csv, io,
+:- instance stream.reader(raw_reader(Stream), raw_csv, io,
         csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
@@ -536,7 +644,7 @@ make_error_message(Error) = Msg :-
 % CSV reader and access procedures.
 %
 
-:- type csv.reader(Stream)
+:- type reader(Stream)
     --->    csv_reader(
                 csv_stream          :: Stream,
                 csv_header_desc     :: header_desc,
@@ -564,6 +672,84 @@ init_reader_delimiter(Stream, HeaderDesc, RecordDesc, FieldDelimiter, Reader,
     ),
     Reader = csv_reader(Stream, HeaderDesc, RecordDesc, FieldDelimiter,
         FieldLimit, WidthLimit).
+
+%----------------------------------------------------------------------------%
+
+init_reader_from_header(Stream, InitFromHeaderPred, Result, !State) :-
+    Params = raw_reader_params(no_limit, no_limit, default_field_delimiter),
+    init_reader_from_header(Stream, Params, InitFromHeaderPred, Result,
+        !State).
+
+init_reader_from_header(Stream, Params, InitFromHeaderPred, Result, !State) :-
+    init_raw_reader(Stream, Params, RawReader, !State),
+    get_raw_record(RawReader, RawRecordResult, !State),
+    (
+        RawRecordResult = ok(RawRecord),
+        RawRecord =  raw_record(_HeaderLineNum, RawHeaderFields),
+        list.map2_foldl(header_field_to_desc(InitFromHeaderPred),
+            RawHeaderFields, HeaderFields, FieldDescs, !State),
+        Delimiter = Params ^ raw_field_delimiter,
+        init_reader_delimiter(Stream, no_header, FieldDescs, Delimiter,
+            Reader, !State),
+        Header = header(HeaderFields),
+        Result = ok(Reader, Header)
+    ;
+        RawRecordResult = eof,
+        Result = eof
+    ;
+        RawRecordResult = error(Error),
+        Result = error(Error)
+    ).
+
+:- pred header_field_to_desc(
+    header_to_field_pred(State)::in(header_to_field_pred),
+    raw_field::in, string::out, field_desc::out, State::di, State::uo) is det.
+
+header_field_to_desc(ToFieldDescPred, RawField, Header, FieldDesc, !State) :-
+    RawField = raw_field(Header, LineNumber, ColNumber),
+    ToFieldDescPred(Header, LineNumber, ColNumber, FieldDesc, !State).
+
+%----------------------------------------------------------------------------%
+
+init_reader_from_header_foldl(Stream, InitFromHeaderPred, Result, !Acc,
+        !State) :-
+    Params = raw_reader_params(no_limit, no_limit, default_field_delimiter),
+    init_reader_from_header_foldl(Stream, Params, InitFromHeaderPred,
+        Result, !Acc, !State).
+
+init_reader_from_header_foldl(Stream, Params, InitFromHeaderPred, Result, !Acc,
+        !State) :-
+    init_raw_reader(Stream, Params, RawReader, !State),
+    get_raw_record(RawReader, RawRecordResult, !State),
+    (
+        RawRecordResult = ok(RawRecord),
+        RawRecord =  raw_record(_HeaderLineNum, RawHeaderFields),
+        list.map2_foldl2(header_field_to_desc_foldl(InitFromHeaderPred),
+            RawHeaderFields, HeaderFields, FieldDescs, !Acc, !State),
+        Delimiter = Params ^ raw_field_delimiter,
+        init_reader_delimiter(Stream, no_header, FieldDescs, Delimiter,
+            Reader, !State),
+        Header = header(HeaderFields),
+        Result = ok(Reader, Header)
+    ;
+        RawRecordResult = eof,
+        Result = eof
+    ;
+        RawRecordResult = error(Error),
+        Result = error(Error)
+    ).
+
+:- pred header_field_to_desc_foldl(
+    header_to_field_foldl_pred(Acc, State)::in(header_to_field_foldl_pred),
+    raw_field::in, string::out, field_desc::out,
+    Acc::in, Acc::out, State::di, State::uo) is det.
+
+header_field_to_desc_foldl(ToFieldDescPred, RawField, Header, FieldDesc,
+        !Acc, !State) :-
+    RawField = raw_field(Header, LineNumber, ColNumber),
+    ToFieldDescPred(Header, LineNumber, ColNumber, FieldDesc, !Acc, !State).
+
+%----------------------------------------------------------------------------%
 
 get_stream(Reader) = Reader ^ csv_stream.
 
@@ -670,6 +856,20 @@ read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
 
 %----------------------------------------------------------------------------%
 
+int_field_desc =
+    field_desc(int(do_not_allow_floats, []), no_limit, trim_whitespace).
+
+float_field_desc =
+    field_desc(float([]), no_limit, trim_whitespace).
+
+floatstr_field_desc =
+    field_desc(floatstr([]), no_limit, trim_whitespace).
+
+string_field_desc =
+    field_desc(string([]), no_limit, trim_whitespace).
+
+%----------------------------------------------------------------------------%
+
 :- instance stream.stream(csv.reader(Stream), io) <= stream(Stream, io) where
 [
     ( name(Reader, Name, !State) :-
@@ -677,10 +877,10 @@ read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
     )
 ].
 
-:- instance stream.input(csv.reader(Stream), io) <= stream.input(Stream, io)
+:- instance stream.input(reader(Stream), io) <= stream.input(Stream, io)
     where [].
 
-:- instance stream.reader(csv.reader(Stream), header, io, csv.error(Error))
+:- instance stream.reader(reader(Stream), header, io, csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
         stream.putback(Stream, char, io, Error)
@@ -691,7 +891,7 @@ read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
     )
 ].
 
-:- instance stream.reader(csv.reader(Stream), record, io, csv.error(Error))
+:- instance stream.reader(reader(Stream), record, io, csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
         stream.putback(Stream, char, io, Error)
@@ -702,7 +902,7 @@ read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
     )
 ].
 
-:- instance stream.reader(csv.reader(Stream), csv.csv, io, csv.error(Error))
+:- instance stream.reader(reader(Stream), csv.csv, io, csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
         stream.putback(Stream, char, io, Error)
@@ -713,7 +913,7 @@ read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
     )
 ].
 
-:- instance stream.line_oriented(csv.reader(Stream), io)
+:- instance stream.line_oriented(reader(Stream), io)
     <= (
         stream.line_oriented(Stream, io)
     ) where
@@ -741,8 +941,16 @@ read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
 %----------------------------------------------------------------------------%
 
 init_raw_reader(Stream, Reader, !State) :-
-    init_raw_reader(Stream, no_limit, no_limit, default_field_delimiter,
-        Reader, !State).
+    Params = raw_reader_params(no_limit, no_limit, default_field_delimiter),
+    init_raw_reader(Stream, Params, Reader, !State).
+
+init_raw_reader(Stream, Params, Reader, !State) :-
+    Params = raw_reader_params(RecordLimit, FieldWidthLimit, FieldDelimiter),
+    ( if is_invalid_delimiter(FieldDelimiter)
+    then throw(invalid_field_delimiter_error(FieldDelimiter))
+    else true
+    ),
+    Reader = raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter).
 
 init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
         !State) :-
@@ -755,7 +963,7 @@ init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
 
 %----------------------------------------------------------------------------%
 
-:- instance stream.stream(csv.raw_reader(Stream), io)
+:- instance stream.stream(raw_reader(Stream), io)
         <= stream.stream(Stream, io) where
 [
     ( name(Reader, Name, !State) :-
@@ -763,10 +971,10 @@ init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
     )
 ].
 
-:- instance stream.input(csv.raw_reader(Stream), io)
+:- instance stream.input(raw_reader(Stream), io)
         <= stream.input(Stream, io) where [].
 
-:- instance stream.reader(csv.raw_reader(Stream), csv.raw_record, io,
+:- instance stream.reader(raw_reader(Stream), raw_record, io,
         csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
@@ -778,7 +986,7 @@ init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
     )
 ].
 
-:- instance stream.reader(csv.raw_reader(Stream), csv.raw_csv, io,
+:- instance stream.reader(raw_reader(Stream), raw_csv, io,
         csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
@@ -790,7 +998,7 @@ init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
     )
 ].
 
-:- instance stream.line_oriented(csv.raw_reader(Stream), io)
+:- instance stream.line_oriented(raw_reader(Stream), io)
     <= (
         stream.line_oriented(Stream, io)
     ) where
