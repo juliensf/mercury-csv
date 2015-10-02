@@ -258,13 +258,19 @@
 % The following all create field_desc that have no width limit, will cause
 % whitespace to be trimmed and will not apply any field actions.
 
+    % NOTE: the field desc returned by this function will not allow floats.
+    %
+:- func int_field_desc = field_desc.
+:- func date_field_desc(date_format) = field_desc.
 :- func float_field_desc = field_desc.
 :- func floatstr_field_desc = field_desc.
 :- func string_field_desc = field_desc.
 
-    % NOTE: the field desc returned by this function will not allow floats.
-    %
-:- func int_field_desc = field_desc.
+:- func maybe_date_field_desc(date_format) = field_desc.
+:- func maybe_float_field_desc = field_desc.
+:- func maybe_floatstr_field_desc = field_desc.
+:- func maybe_int_field_desc = field_desc.
+:- func maybe_string_field_desc = field_desc.
 
 %----------------------------------------------------------------------------%
 %
@@ -856,8 +862,8 @@ read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
 
 %----------------------------------------------------------------------------%
 
-int_field_desc =
-    field_desc(int(do_not_allow_floats, []), no_limit, trim_whitespace).
+date_field_desc(DateFormat) =
+    field_desc(date(DateFormat, []), no_limit, trim_whitespace).
 
 float_field_desc =
     field_desc(float([]), no_limit, trim_whitespace).
@@ -865,8 +871,26 @@ float_field_desc =
 floatstr_field_desc =
     field_desc(floatstr([]), no_limit, trim_whitespace).
 
+int_field_desc =
+    field_desc(int(do_not_allow_floats, []), no_limit, trim_whitespace).
+
 string_field_desc =
     field_desc(string([]), no_limit, trim_whitespace).
+
+maybe_date_field_desc(DateFormat) =
+    field_desc(maybe(date(DateFormat, [])), no_limit, trim_whitespace).
+
+maybe_float_field_desc =
+    field_desc(maybe(float([])), no_limit, trim_whitespace).
+
+maybe_floatstr_field_desc =
+    field_desc(maybe(floatstr([])), no_limit, trim_whitespace).
+
+maybe_int_field_desc =
+    field_desc(int(do_not_allow_floats, []), no_limit, trim_whitespace).
+
+maybe_string_field_desc =
+    field_desc(maybe(string([])), no_limit, trim_whitespace).
 
 %----------------------------------------------------------------------------%
 
