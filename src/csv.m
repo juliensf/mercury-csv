@@ -201,6 +201,8 @@
     ;       maybe(field_type).
             % A Mercury maybe/0 value.
             % A blank field in the CSV data corresponds to maybe.no/0.
+            % A software_error/0 exception is thrown if nested maybe fields
+            % are encountered.
 
 :- type field_action(T) == (func(T) = field_action_result(T)).
 :- type field_actions(T) == list(field_action(T)).
