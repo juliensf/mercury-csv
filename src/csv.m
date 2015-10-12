@@ -356,12 +356,31 @@
 
 % The predicates in this section create CSV readers by reading in the header
 % line from some CSV data and then calling a user-defined predicate to generate
-% a field descriptor from each header field.
+% a field descriptor from each header field.  These field descriptors are then
+% used when processing the remainder of the CSV data.
 
 :- type init_from_header_result(Stream, Error)
     --->    ok(reader(Stream), header)
     ;       eof
     ;       error(csv.error(Error)).
+
+:- type init_from_header_params
+    --->    init_from_header_params(
+                init_from_header_record_field_limit :: record_field_limit,
+                % What limit, if any, is applied to the number of fields in
+                % header.
+
+                init_from_header_field_width_limit :: field_width_limit,
+                % What limit, if any, is applied  to the width of fields
+                % in the header.
+
+                init_from_header_time_whitespace :: trim_whitespace,
+                % Should leading- and trailing-whitespace be stripped from
+                % the header fields?
+
+                init_from_header_field_delimiter :: char
+                % The field delimiter character to use.
+            ).
 
 :- type header_to_field_pred(State)
     == pred(string, line_number, column_number, field_desc, State, State).
@@ -382,11 +401,11 @@
 
     % init_reader_from_header(Stream, Params, HeaderToField, Result, !State):
     %
-    % As above but use the raw reader parameters (see 'CSV raw readers' below)
-    % in Params when reading in the the header record.  The CSV reader returned
-    % will inherit the field delimiter character from Params.
+    % As above but use the parameters (see 'CSV raw readers' below) in Params
+    % when reading in the the header record.  The CSV reader returned will
+    % inherit the field delimiter character from Params.
     %
-:- pred init_reader_from_header(Stream::in, raw_reader_params::in,
+:- pred init_reader_from_header(Stream::in, init_from_header_params::in,
     header_to_field_pred(State)::in(header_to_field_pred),
     init_from_header_result(Stream, Error)::out, State::di, State::uo) is det
     <= (
@@ -413,7 +432,7 @@
         stream.putback(Stream, char, State, Error)
     ).
 
-:- pred init_reader_from_header_foldl(Stream::in, raw_reader_params::in,
+:- pred init_reader_from_header_foldl(Stream::in, init_from_header_params::in,
     header_to_field_foldl_pred(Acc, State)::in(header_to_field_foldl_pred),
     init_from_header_result(Stream, Error)::out,
     Acc::in, Acc::out, State::di, State::uo) is det
@@ -684,19 +703,36 @@ init_reader_delimiter(Stream, HeaderDesc, RecordDesc, FieldDelimiter, Reader,
 %----------------------------------------------------------------------------%
 
 init_reader_from_header(Stream, InitFromHeaderPred, Result, !State) :-
-    Params = raw_reader_params(no_limit, no_limit, default_field_delimiter),
+    Params = init_from_header_params(
+        no_limit,
+        no_limit,
+        do_not_trim_whitespace,
+        default_field_delimiter
+    ),
     init_reader_from_header(Stream, Params, InitFromHeaderPred, Result,
         !State).
 
-init_reader_from_header(Stream, Params, InitFromHeaderPred, Result, !State) :-
-    init_raw_reader(Stream, Params, RawReader, !State),
+init_reader_from_header(Stream, FromHeaderParams, InitFromHeaderPred,
+        Result, !State) :-
+    FromHeaderParams = init_from_header_params(
+        RecordFieldLimit,
+        FieldWidthLimit,
+        TrimWhitespace,
+        Delimiter
+    ),
+    RawParams = raw_reader_params(
+        RecordFieldLimit,
+        FieldWidthLimit,
+        Delimiter
+    ),
+    init_raw_reader(Stream, RawParams, RawReader, !State),
     get_raw_record(RawReader, RawRecordResult, !State),
     (
         RawRecordResult = ok(RawRecord),
         RawRecord =  raw_record(_HeaderLineNum, RawHeaderFields),
-        list.map2_foldl(header_field_to_desc(InitFromHeaderPred),
+        list.map2_foldl(
+            header_field_to_desc(TrimWhitespace, InitFromHeaderPred),
             RawHeaderFields, HeaderFields, FieldDescs, !State),
-        Delimiter = Params ^ raw_field_delimiter,
         init_reader_delimiter(Stream, no_header, FieldDescs, Delimiter,
             Reader, !State),
         Header = header(HeaderFields),
@@ -709,32 +745,56 @@ init_reader_from_header(Stream, Params, InitFromHeaderPred, Result, !State) :-
         Result = error(Error)
     ).
 
-:- pred header_field_to_desc(
+:- pred header_field_to_desc(trim_whitespace::in,
     header_to_field_pred(State)::in(header_to_field_pred),
     raw_field::in, string::out, field_desc::out, State::di, State::uo) is det.
 
-header_field_to_desc(ToFieldDescPred, RawField, Header, FieldDesc, !State) :-
-    RawField = raw_field(Header, LineNumber, ColNumber),
+header_field_to_desc(TrimWhitespace, ToFieldDescPred, RawField, Header,
+        FieldDesc, !State) :-
+    RawField = raw_field(Header0, LineNumber, ColNumber),
+    (
+        TrimWhitespace = do_not_trim_whitespace,
+        Header = Header0
+    ;
+        TrimWhitespace = trim_whitespace,
+        Header = string.strip(Header0)
+    ),
     ToFieldDescPred(Header, LineNumber, ColNumber, FieldDesc, !State).
 
 %----------------------------------------------------------------------------%
 
 init_reader_from_header_foldl(Stream, InitFromHeaderPred, Result, !Acc,
         !State) :-
-    Params = raw_reader_params(no_limit, no_limit, default_field_delimiter),
+    Params = init_from_header_params(
+        no_limit,
+        no_limit,
+        do_not_trim_whitespace,
+        default_field_delimiter
+    ),
     init_reader_from_header_foldl(Stream, Params, InitFromHeaderPred,
         Result, !Acc, !State).
 
-init_reader_from_header_foldl(Stream, Params, InitFromHeaderPred, Result, !Acc,
-        !State) :-
-    init_raw_reader(Stream, Params, RawReader, !State),
+init_reader_from_header_foldl(Stream, FromHeaderParams, InitFromHeaderPred,
+        Result, !Acc, !State) :-
+    FromHeaderParams = init_from_header_params(
+        RecordFieldLimit,
+        FieldWidthLimit,
+        TrimWhitespace,
+        Delimiter
+    ),
+    RawParams = raw_reader_params(
+        RecordFieldLimit,
+        FieldWidthLimit,
+        Delimiter
+    ),
+    init_raw_reader(Stream, RawParams, RawReader, !State),
     get_raw_record(RawReader, RawRecordResult, !State),
     (
         RawRecordResult = ok(RawRecord),
         RawRecord =  raw_record(_HeaderLineNum, RawHeaderFields),
-        list.map2_foldl2(header_field_to_desc_foldl(InitFromHeaderPred),
+        list.map2_foldl2(
+            header_field_to_desc_foldl(TrimWhitespace, InitFromHeaderPred),
             RawHeaderFields, HeaderFields, FieldDescs, !Acc, !State),
-        Delimiter = Params ^ raw_field_delimiter,
         init_reader_delimiter(Stream, no_header, FieldDescs, Delimiter,
             Reader, !State),
         Header = header(HeaderFields),
@@ -747,14 +807,21 @@ init_reader_from_header_foldl(Stream, Params, InitFromHeaderPred, Result, !Acc,
         Result = error(Error)
     ).
 
-:- pred header_field_to_desc_foldl(
+:- pred header_field_to_desc_foldl(trim_whitespace::in,
     header_to_field_foldl_pred(Acc, State)::in(header_to_field_foldl_pred),
     raw_field::in, string::out, field_desc::out,
     Acc::in, Acc::out, State::di, State::uo) is det.
 
-header_field_to_desc_foldl(ToFieldDescPred, RawField, Header, FieldDesc,
-        !Acc, !State) :-
-    RawField = raw_field(Header, LineNumber, ColNumber),
+header_field_to_desc_foldl(TrimWhitespace, ToFieldDescPred, RawField,
+        Header, FieldDesc, !Acc, !State) :-
+    RawField = raw_field(Header0, LineNumber, ColNumber),
+    (
+        TrimWhitespace = do_not_trim_whitespace,
+        Header = Header0
+    ;
+        TrimWhitespace = trim_whitespace,
+        Header = string.strip(Header0)
+    ),
     ToFieldDescPred(Header, LineNumber, ColNumber, FieldDesc, !Acc, !State).
 
 %----------------------------------------------------------------------------%

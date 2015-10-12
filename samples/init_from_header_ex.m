@@ -43,8 +43,14 @@
 
 main(!IO) :-
     io.stdin_stream(Stdin, !IO),
-    csv.init_reader_from_header_foldl(Stdin, make_field_desc, InitReaderResult,
-        0, NumDiscards, !IO),
+    FromHeaderParams = init_from_header_params(
+        no_limit,
+        no_limit,
+        trim_whitespace,
+        (',')
+    ),
+    csv.init_reader_from_header_foldl(Stdin, FromHeaderParams, make_field_desc,
+        InitReaderResult, 0, NumDiscards, !IO),
     (
         InitReaderResult = ok(Reader, _Header),
         stream.get(Reader, CSVDataResult, !IO),
