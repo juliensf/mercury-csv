@@ -154,7 +154,12 @@ process_csv(InputFile, !IO) :-
     ;
         MaybeData = eof
     ;
-        MaybeData = error(_)
+        MaybeData = error(Error),
+        ErrorMsg = stream.error_message(Error),
+        io.stderr_stream(Stderr, !IO),
+        io.write_string(Stderr, ErrorMsg, !IO),
+        io.nl(Stderr, !IO),
+        io.set_exit_status(1, !IO)
     ).
 
 %-----------------------------------------------------------------------------%

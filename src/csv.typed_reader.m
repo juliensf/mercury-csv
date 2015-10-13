@@ -338,9 +338,9 @@ process_field(StreamName, Desc, RawField, FieldNo, MaybeResult) :-
     Desc = field_desc(Type, MaybeWidthLimit, TrimWS),
     (
         TrimWS = trim_whitespace,
-        RawField = raw_field(FieldValue0, StartLineNo, ColNo),
-        % XXX ColNo should be adjusted by the amount of whitespace stripped
-        % from the start of the field.
+        RawField = raw_field(FieldValue0, StartLineNo, ColNo0),
+        LeadingWS = string.prefix_length(char.is_whitespace, FieldValue0),
+        ColNo = ColNo0 + LeadingWS,
         FieldValue = string.strip(FieldValue0),
         RawFieldPrime = raw_field(FieldValue, StartLineNo, ColNo)
     ;
