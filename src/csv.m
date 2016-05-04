@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2015 Julien Fischer.
+% Copyright (C) 2013-2016 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 %
@@ -351,7 +351,7 @@
 
 %----------------------------------------------------------------------------%
 %
-% Intializing readers from the header.
+% Initializing readers from the header.
 %
 
 % The predicates in this section create CSV readers by reading in the header

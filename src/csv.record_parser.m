@@ -323,7 +323,7 @@ next_quoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
                 NextGetResult = error(Error),
                 Result = fr_error(stream_error(Error))
             )
-        else 
+        else
             % NOTE: quoted delimiter characters do not count has having
             % seen a delimiter.
             !:LastSeen = last_seen_other,
