@@ -956,7 +956,7 @@ maybe_floatstr_field_desc =
     field_desc(maybe(floatstr([])), no_limit, trim_whitespace).
 
 maybe_int_field_desc =
-    field_desc(int(do_not_allow_floats, []), no_limit, trim_whitespace).
+    field_desc(maybe(int(do_not_allow_floats, [])), no_limit, trim_whitespace).
 
 maybe_string_field_desc =
     field_desc(maybe(string([])), no_limit, trim_whitespace).
