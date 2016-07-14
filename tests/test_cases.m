@@ -418,6 +418,24 @@ tests = [
             field_desc(int(do_not_allow_floats, []), no_limit, do_not_trim_whitespace),
             field_desc(int(do_not_allow_floats, []), no_limit, do_not_trim_whitespace)
         ]
+    ),
+
+    test_case(
+        test_type_valid,
+        "conv_funcs_valid",
+        no_header,
+        [
+            int_field_desc,
+            date_field_desc(yyyy_mm_dd("-")),
+            float_field_desc,
+            floatstr_field_desc,
+            string_field_desc,
+            maybe_date_field_desc(yyyy_mm_dd("-")),
+            maybe_float_field_desc,
+            maybe_floatstr_field_desc,
+            maybe_int_field_desc,
+            maybe_string_field_desc
+        ]
     )
 ].
 
