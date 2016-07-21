@@ -979,9 +979,7 @@ maybe_string_field_desc =
         stream.putback(Stream, char, io, Error)
     ) where
 [
-    ( get(Reader, Result, !State) :-
-        csv.typed_reader.get_header(Reader, Result, !State)
-    )
+    pred(get/4) is csv.typed_reader.get_header
 ].
 
 :- instance stream.reader(reader(Stream), record, io, csv.error(Error))
@@ -990,9 +988,7 @@ maybe_string_field_desc =
         stream.putback(Stream, char, io, Error)
     ) where
 [
-    ( get(Reader, Result, !State) :-
-        csv.typed_reader.get_record(Reader, Result, !State)
-    )
+    pred(get/4) is csv.typed_reader.get_record
 ].
 
 :- instance stream.reader(reader(Stream), csv.csv, io, csv.error(Error))
@@ -1001,9 +997,7 @@ maybe_string_field_desc =
         stream.putback(Stream, char, io, Error)
     ) where
 [
-    ( get(Reader, Result, !State) :-
-        csv.typed_reader.get_csv(Reader, Result, !State)
-    )
+    pred(get/4) is csv.typed_reader.get_csv
 ].
 
 :- instance stream.line_oriented(reader(Stream), io)
@@ -1074,9 +1068,7 @@ init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
         stream.putback(Stream, char, io, Error)
     ) where
 [
-    ( get(Reader, Result, !State) :-
-        csv.raw_reader.get_raw_record(Reader, Result, !State)
-    )
+    pred(get/4) is csv.raw_reader.get_raw_record
 ].
 
 :- instance stream.reader(raw_reader(Stream), raw_csv, io,
@@ -1086,9 +1078,7 @@ init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
         stream.putback(Stream, char, io, Error)
     ) where
 [
-    ( get(Reader, Result, !State) :-
-        csv.raw_reader.get_raw_csv(Reader, Result, !State)
-    )
+    pred(get/4) is csv.raw_reader.get_raw_csv
 ].
 
 :- instance stream.line_oriented(raw_reader(Stream), io)
