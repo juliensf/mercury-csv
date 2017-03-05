@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2016 Julien Fischer.
+% Copyright (C) 2013-2017 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 %
@@ -86,7 +86,7 @@
 %----------------------------------------------------------------------------%
 
     % What limit, if any, is imposed on the number of fields that may
-    % appear in a record.
+    % appear in a record?
     %
 :- type record_field_limit
     --->    no_limit
@@ -94,7 +94,7 @@
 
     % What limit, if any, is imposed on the number of characters that may
     % appear in a field.  This limit is exclusive of the quote characters
-    % for quoted fields.
+    % for quoted fields?
     %
 :- type field_width_limit
     --->    no_limit
@@ -117,8 +117,8 @@
     %
 :- type reader(Stream).
 
-    % This type specifies whether the CSV data begins with a header line
-    % or not.
+    % This type specifies whether the CSV data begins with a header line or
+    % not.
     %
 :- type header_desc
     --->    no_header
@@ -167,8 +167,8 @@
 
     ;       int(float_int_handler, field_actions(int))
             % This field is a Mercury int value.
-            % The "float_int_handler" argument specifies what should be
-            % done if a float value is encountered in the field.
+            % The "float_int_handler" argument specifies what should be done if
+            % a float value is encountered in the field.
 
     ;       float(field_actions(float))
             % The field is a Mercury float value.
@@ -355,9 +355,9 @@
 %
 
 % The predicates in this section create CSV readers by reading in the header
-% line from some CSV data and then calling a user-defined predicate to generate
-% a field descriptor from each header field.  These field descriptors are then
-% used when processing the remainder of the CSV data.
+% record from some CSV data and then calling a user-defined predicate to
+% generate a field descriptor from each header field.  These field descriptors
+% are then used when processing the remainder of the CSV data.
 
 :- type init_from_header_result(Stream, Error)
     --->    ok(reader(Stream), header)
@@ -368,11 +368,11 @@
     --->    init_from_header_params(
                 init_from_header_record_field_limit :: record_field_limit,
                 % What limit, if any, is applied to the number of fields in
-                % header.
+                % header?
 
                 init_from_header_field_width_limit :: field_width_limit,
                 % What limit, if any, is applied  to the width of fields
-                % in the header.
+                % in the header?
 
                 init_from_header_time_whitespace :: trim_whitespace,
                 % Should leading- and trailing-whitespace be stripped from
