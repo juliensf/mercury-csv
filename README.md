@@ -18,6 +18,7 @@ and reading CSV data to and from character streams.
   and the number of fields in a record
 * supports the presence of an optional header record
 * field delimiter character can be selected by the user
+* can optionally ignore blank lines
 
 
 ## LICENSE

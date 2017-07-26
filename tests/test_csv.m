@@ -79,17 +79,17 @@ test_name_matches(TestNames, TestCase) :-
 
 run_test(OptionTable, _TotalNumTests, TestCase, !TestNum, !Results, !IO) :-
     increment_total_tests(!Results),
-    TestCase = test_case(Type, Name, HeaderDesc, RecordDesc),
+    TestCase = test_case(Type, Name, MaybeParams, HeaderDesc, RecordDesc),
     maybe_verbose(OptionTable, io.format("RUNNING TEST: %s ... ", [s(Name)]),
         !IO),
     (
         Type = test_type_valid,
-        run_test_valid(OptionTable, Name, HeaderDesc, RecordDesc, !Results,
-            !IO)
+        run_test_valid(OptionTable, Name, MaybeParams, HeaderDesc,
+            RecordDesc, !Results, !IO)
     ;
         Type = test_type_invalid,
-        run_test_invalid(OptionTable, Name, HeaderDesc, RecordDesc, !Results,
-            !IO)
+        run_test_invalid(OptionTable, Name, MaybeParams, HeaderDesc,
+            RecordDesc, !Results, !IO)
     ),
     !:TestNum = !.TestNum + 1.
 
@@ -100,10 +100,10 @@ run_test(OptionTable, _TotalNumTests, TestCase, !TestNum, !Results, !IO) :-
 % expected output.
 
 :- pred run_test_valid(option_table(option)::in,
-    string::in, header_desc::in, record_desc::in,
+    string::in, maybe(reader_params)::in, header_desc::in, record_desc::in,
     test_results::in,  test_results::out,  io::di, io::uo) is det.
 
-run_test_valid(OptionTable, Name, HeaderDesc, RecordDesc,
+run_test_valid(OptionTable, Name, MaybeParams, HeaderDesc, RecordDesc,
         !Results, !IO) :-
     InputFileName = Name ++ ".inp",
     io.open_input(InputFileName, InputResult, !IO),
@@ -113,7 +113,15 @@ run_test_valid(OptionTable, Name, HeaderDesc, RecordDesc,
         io.open_output(OutputFileName, OutputResult, !IO),
         (
             OutputResult = ok(OutputFile),
-            csv.init_reader(InputFile, HeaderDesc, RecordDesc, Reader, !IO),
+            (
+                MaybeParams = yes(Params),
+                csv.init_reader(InputFile, Params, HeaderDesc, RecordDesc,
+                    Reader, !IO)
+            ;
+                MaybeParams = no,
+                csv.init_reader(InputFile, HeaderDesc, RecordDesc,
+                    Reader, !IO)
+            ),
             process_csv(Reader, OutputFile, Result, !IO),
             (
                 Result = ok,
@@ -194,10 +202,10 @@ run_test_valid(OptionTable, Name, HeaderDesc, RecordDesc,
 %-----------------------------------------------------------------------------%
 
 :- pred run_test_invalid(option_table(option)::in,
-    string::in, header_desc::in, record_desc::in,
+    string::in, maybe(reader_params)::in, header_desc::in, record_desc::in,
     test_results::in,  test_results::out,  io::di, io::uo) is det.
 
-run_test_invalid(OptionTable, Name, HeaderDesc, RecordDesc,
+run_test_invalid(OptionTable, Name, MaybeParams, HeaderDesc, RecordDesc,
         !Results, !IO) :-
     InputFileName = Name ++ ".inp",
     io.open_input(InputFileName, InputResult, !IO),
@@ -207,7 +215,15 @@ run_test_invalid(OptionTable, Name, HeaderDesc, RecordDesc,
         io.open_output(OutputFileName, OutputResult, !IO),
         (
             OutputResult = ok(OutputFile),
-            csv.init_reader(InputFile, HeaderDesc, RecordDesc, Reader, !IO),
+            (
+                MaybeParams = yes(Params),
+                csv.init_reader(InputFile, Params, HeaderDesc, RecordDesc,
+                    Reader, !IO)
+            ;
+                MaybeParams = no,
+                csv.init_reader(InputFile, HeaderDesc, RecordDesc,
+                    Reader, !IO)
+            ),
             process_csv(Reader, OutputFile, Result, !IO),
             (
                 Result = error(ProcessCSV_Error),

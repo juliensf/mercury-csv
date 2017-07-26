@@ -120,7 +120,7 @@
 %-----------------------------------------------------------------------------%
 
 get_csv(Desc, Result, !State) :-
-    Desc = csv_reader(Stream, HeaderDesc, _, _, _, _),
+    Desc = csv_reader(Stream, HeaderDesc, _, _, _, _, _),
     stream.name(Stream, Name, !State),
     (
         HeaderDesc = no_header,
@@ -186,33 +186,41 @@ get_header(Reader, Result, !State) :-
         (
             RecordResult = ok(RawHeader),
             RawHeader = raw_record(_, HeaderFields),
-            RecordDesc = Reader ^ csv_record_desc,
-            list.length(RecordDesc, NumFields),
-            list.length(HeaderFields, NumHeaderFields),
-            compare(CmpResult, NumHeaderFields, NumFields),
-            (
-                CmpResult = (=),
-                HeaderFieldValues = list.map((func(F) = F ^ raw_field_value),
-                    HeaderFields),
-                Header = header(HeaderFieldValues),
-                Result = ok(Header)
-            ;
-                ( CmpResult = (>)
-                ; CmpResult = (<)
-                ),
-                stream.name(get_stream(Reader), StreamName, !State),
-                string.format("expected %d fields in header: actual %d",
-                    [i(NumFields), i(NumHeaderFields)], Msg),
-                % XXX the error contexts are not really appropriate here.
-                ColNo = 1,
-                Error = csv_error(
-                    StreamName,
-                    LineNo,
-                    ColNo,
-                    NumHeaderFields,
-                    Msg
-                ),
-                Result = error(Error)
+            IgnoreBlankLines = Reader ^ csv_ignore_blank_lines,
+            ( if
+                IgnoreBlankLines = ignore_blank_lines,
+                raw_fields_are_blank(HeaderFields)
+            then
+                get_header(Reader, Result, !State)
+            else
+                RecordDesc = Reader ^ csv_record_desc,
+                list.length(RecordDesc, NumFields),
+                list.length(HeaderFields, NumHeaderFields),
+                compare(CmpResult, NumHeaderFields, NumFields),
+                (
+                    CmpResult = (=),
+                    HeaderFieldValues = list.map(
+                        (func(F) = F ^ raw_field_value), HeaderFields),
+                    Header = header(HeaderFieldValues),
+                    Result = ok(Header)
+                ;
+                    ( CmpResult = (>)
+                    ; CmpResult = (<)
+                    ),
+                    stream.name(get_stream(Reader), StreamName, !State),
+                    string.format("expected %d fields in header: actual %d",
+                        [i(NumFields), i(NumHeaderFields)], Msg),
+                    % XXX the error contexts are not really appropriate here.
+                    ColNo = 1,
+                    Error = csv_error(
+                        StreamName,
+                        LineNo,
+                        ColNo,
+                        NumHeaderFields,
+                        Msg
+                    ),
+                    Result = error(Error)
+                )
             )
         ;
             RecordResult = eof,
@@ -240,22 +248,30 @@ get_record(Reader, Result, !State) :-
     get_next_record(client_reader(Reader), RecordResult, !State),
     (
         RecordResult = ok(RawRecord),
-        FieldDescs = Reader ^ csv_record_desc,
-        FieldNo = 1,
         RawRecord = raw_record(RecordLineNo, RawFields),
-        process_fields(StreamName, RecordLineNo, FieldDescs, RawFields,
-            FieldNo, [], ProcessFieldsResult),
-        (
-            ProcessFieldsResult = prr_ok(RevFields),
-            list.reverse(RevFields, Fields),
-            Record = record(LineNo, Fields),
-            Result = ok(Record)
-        ;
-            ProcessFieldsResult = prr_error(ErrorLineNo, ErrorColNo,
-                ErrorFieldNo, ErrorMsg),
-            Error = csv_error(StreamName, ErrorLineNo, ErrorColNo,
-                ErrorFieldNo, ErrorMsg),
-            Result = error(Error)
+        IgnoreBlankLines = Reader ^ csv_ignore_blank_lines,
+        ( if
+            IgnoreBlankLines = ignore_blank_lines,
+            raw_fields_are_blank(RawFields)
+        then
+           get_record(Reader, Result, !State)
+        else
+            FieldDescs = Reader ^ csv_record_desc,
+            FieldNo = 1,
+            process_fields(StreamName, RecordLineNo, FieldDescs, RawFields,
+                FieldNo, [], ProcessFieldsResult),
+            (
+                ProcessFieldsResult = prr_ok(RevFields),
+                list.reverse(RevFields, Fields),
+                Record = record(LineNo, Fields),
+                Result = ok(Record)
+            ;
+                ProcessFieldsResult = prr_error(ErrorLineNo, ErrorColNo,
+                    ErrorFieldNo, ErrorMsg),
+                Error = csv_error(StreamName, ErrorLineNo, ErrorColNo,
+                    ErrorFieldNo, ErrorMsg),
+                Result = error(Error)
+            )
         )
     ;
         RecordResult = error(Error),
@@ -264,6 +280,13 @@ get_record(Reader, Result, !State) :-
         RecordResult = eof,
         Result = eof
     ).
+
+:- pred raw_fields_are_blank(raw_fields::in) is semidet.
+
+raw_fields_are_blank([]).
+raw_fields_are_blank([Field]) :-
+    Field = raw_field(Value, _, _),
+    string.all_match(char.is_whitespace, Value).
 
 %-----------------------------------------------------------------------------%
 

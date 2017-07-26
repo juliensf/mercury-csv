@@ -7,6 +7,7 @@
 
 :- import_module csv.
 :- import_module list.
+:- import_module maybe.
 
 %-----------------------------------------------------------------------------%
 
@@ -14,11 +15,11 @@
     --->    test_type_valid
     ;       test_type_invalid.
 
-
 :- type test_case
     --->    test_case(
                 test_type   :: test_type,
                 test_name   :: string,
+                test_params :: maybe(reader_params),
                 test_header :: header_desc,
                 test_record :: record_desc
             ).
@@ -46,6 +47,7 @@ tests = [
     test_case(
         test_type_valid,
         "bool1",
+        no,
         no_header,
         [
             field_desc(bool(tf_to_bool, []), no_limit, do_not_trim_whitespace),
@@ -57,6 +59,7 @@ tests = [
     test_case(
         test_type_valid,
         "bool2",
+        no,
         no_header,
         [
             field_desc(bool(tf_to_bool, []), no_limit, trim_whitespace),
@@ -68,6 +71,7 @@ tests = [
     test_case(
         test_type_valid,
         "bool3",
+        no,
         no_header,
         [
             field_desc(bool(tf_to_bool, []), no_limit, trim_whitespace),
@@ -79,6 +83,7 @@ tests = [
     test_case(
         test_type_valid,
         "bool4",
+        no,
         header_desc(no_limit),
         [
             field_desc(bool(tf_to_bool, []), no_limit, trim_whitespace),
@@ -89,6 +94,7 @@ tests = [
     test_case(
         test_type_valid,
         "regression1",
+        no,
         no_header,
         [
             field_desc(string([]), limited(3), do_not_trim_whitespace),
@@ -104,6 +110,7 @@ tests = [
     test_case(
         test_type_valid,
         "regression2",
+        no,
         no_header,
         [
             field_desc(string([]), limited(1), do_not_trim_whitespace),
@@ -115,6 +122,7 @@ tests = [
     test_case(
         test_type_valid,
         "regression3",
+        no,
         no_header,
         [
             field_desc(string([]), limited(3), do_not_trim_whitespace),
@@ -127,6 +135,7 @@ tests = [
     test_case(
         test_type_valid,
         "regression4",
+        no,
         no_header,
         [
             field_desc(string([]), no_limit, do_not_trim_whitespace),
@@ -138,6 +147,7 @@ tests = [
     test_case(
         test_type_invalid,
         "regression4-bad",
+        no,
         no_header,
         [
             field_desc(string([]), no_limit, do_not_trim_whitespace),
@@ -149,6 +159,7 @@ tests = [
     test_case(
         test_type_valid,
         "real1",
+        no,
         header_desc(limited(255)),
         [
            field_desc(string([]), limited(100), trim_whitespace),
@@ -160,6 +171,7 @@ tests = [
     test_case(
         test_type_valid,
         "real2",
+        no,
         header_desc(limited(255)),
         [
             field_desc(string([]), limited(200), trim_whitespace),
@@ -184,6 +196,7 @@ tests = [
     test_case(
         test_type_valid,
         "wiki1",
+        no,
         no_header,
         [
             field_desc(int(do_not_allow_floats, []), limited(4), do_not_trim_whitespace),
@@ -196,6 +209,7 @@ tests = [
     test_case(
         test_type_valid,
         "wiki2",
+        no,
         header_desc(limited(100)),
         [
             field_desc(int(do_not_allow_floats, []), limited(4), do_not_trim_whitespace),
@@ -209,6 +223,7 @@ tests = [
     test_case(
         test_type_valid,
         "date1",
+        no,
         no_header,
         [
             field_desc(date(yyyy_mm_dd("-"), []), limited(10), do_not_trim_whitespace),
@@ -220,6 +235,7 @@ tests = [
     test_case(
         test_type_valid,
         "date2",
+        no,
         no_header,
         [
             field_desc(date(yyyy_b_dd("-"), []), limited(14), do_not_trim_whitespace),
@@ -231,6 +247,7 @@ tests = [
     test_case(
         test_type_valid,
         "countrylist",
+        no,
         header_desc(limited(50)),
         [
             field_desc(int(do_not_allow_floats, []), limited(3), do_not_trim_whitespace),
@@ -253,6 +270,7 @@ tests = [
     test_case(
         test_type_valid,
         "companies",
+        no,
         header_desc(limited(50)),
         [
             field_desc(string([]), limited(200), do_not_trim_whitespace),
@@ -266,6 +284,7 @@ tests = [
     test_case(
         test_type_invalid,
         "invalid_date1",
+        no,
         no_header,
         [
             field_desc(date(dd_mm_yyyy("/"), []), no_limit, do_not_trim_whitespace),
@@ -278,6 +297,7 @@ tests = [
     test_case(
         test_type_invalid,
         "field_limit",
+        no,
         no_header,
         [
             field_desc(string([]), no_limit, do_not_trim_whitespace),
@@ -289,6 +309,7 @@ tests = [
     test_case(
         test_type_invalid,
         "header_eof",
+        no,
         header_desc(limited(255)),
         [
             field_desc(string([]), no_limit, do_not_trim_whitespace),
@@ -300,6 +321,7 @@ tests = [
     test_case(
         test_type_invalid,
         "unmatched_quote",
+        no,
         no_header,
         [
             field_desc(string([]), no_limit, do_not_trim_whitespace),
@@ -310,6 +332,7 @@ tests = [
     test_case(
         test_type_invalid,
         "unmatched_quote2",
+        no,
         no_header,
         [
             field_desc(string([]), no_limit, do_not_trim_whitespace),
@@ -320,6 +343,7 @@ tests = [
     test_case(
         test_type_invalid,
         "unmatched_quote3",
+        no,
         no_header,
         [
             field_desc(string([]), no_limit, do_not_trim_whitespace),
@@ -330,6 +354,7 @@ tests = [
     test_case(
         test_type_invalid,
         "width_limit",
+        no,
         no_header,
         [
             field_desc(string([]), limited(3), do_not_trim_whitespace),
@@ -340,6 +365,7 @@ tests = [
     test_case(
         test_type_invalid,
         "width_limit2",
+        no,
         no_header,
         [
             field_desc(string([]), limited(6), do_not_trim_whitespace),
@@ -350,6 +376,7 @@ tests = [
     test_case(
         test_type_valid,
         "univ",
+        no,
         no_header,
         [
             field_desc(univ(fruit_to_univ, []), limited(6), do_not_trim_whitespace),
@@ -361,6 +388,7 @@ tests = [
     test_case(
         test_type_valid,
         "discard",
+        no,
         no_header,
         [
             field_desc(string([]), limited(6), do_not_trim_whitespace),
@@ -372,6 +400,7 @@ tests = [
     test_case(
         test_type_invalid,
         "discard-bad",
+        no,
         no_header,
         [
             field_desc(string([]), limited(6), do_not_trim_whitespace),
@@ -383,6 +412,7 @@ tests = [
     test_case(
         test_type_valid,
         "date_time",
+        no,
         no_header,
         [
             field_desc(date_time(mm_dd_yyyy_hh_mm("-", " ", ":"), []), no_limit, do_not_trim_whitespace),
@@ -393,6 +423,7 @@ tests = [
     test_case(
         test_type_valid,
         "date_time2",
+        no,
         no_header,
         [
             field_desc(date_time(dd_mm_yyyy_hh_mm("/", " ", ":"), []), no_limit, do_not_trim_whitespace),
@@ -403,6 +434,7 @@ tests = [
     test_case(
         test_type_valid,
         "maybe",
+        no,
         no_header,
         [
             field_desc(maybe(int(do_not_allow_floats, [])), no_limit, do_not_trim_whitespace),
@@ -413,6 +445,7 @@ tests = [
     test_case(
         test_type_invalid,
         "field_desc_mismatch",
+        no,
         no_header,
         [
             field_desc(int(do_not_allow_floats, []), no_limit, do_not_trim_whitespace),
@@ -423,6 +456,7 @@ tests = [
     test_case(
         test_type_valid,
         "conv_funcs_valid",
+        no,
         no_header,
         [
             int_field_desc,
@@ -435,6 +469,18 @@ tests = [
             maybe_floatstr_field_desc,
             maybe_int_field_desc,
             maybe_string_field_desc
+        ]
+    ),
+
+    test_case(
+        test_type_valid,
+        "blank_lines",
+        yes(reader_params(ignore_blank_lines, ',')),
+        header_desc(no_limit),
+        [
+            string_field_desc,
+            string_field_desc,
+            string_field_desc
         ]
     )
 ].
