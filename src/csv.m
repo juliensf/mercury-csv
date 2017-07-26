@@ -401,7 +401,7 @@
                 init_from_header_field_delimiter :: char,
                 % The field delimiter character to use.
 
-                init_from_header_ingore_blank_lines :: ignore_blank_lines
+                init_from_header_ignore_blank_lines :: ignore_blank_lines
                 % Should blank lines be ignored?
             ).
 
