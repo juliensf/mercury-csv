@@ -19,7 +19,7 @@ and reading CSV data to and from character streams.
 * supports the presence of an optional header record
 * field delimiter character can be selected by the user
 * can optionally ignore blank lines
-
+* can optionally ignore trailing fields
 
 ## LICENSE
 
