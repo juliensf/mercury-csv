@@ -84,6 +84,9 @@
     stream.maybe_partial_res(T, csv.error(Error)).
 
 %----------------------------------------------------------------------------%
+%
+% Reader parameters.
+%
 
     % What limit, if any, is imposed on the number of fields that may
     % appear in a record?
@@ -108,9 +111,16 @@
 
     % Should lines consisting of nothing but whitespace be ignored?
     %
-:- type ignore_blank_lines
-    --->    ignore_blank_lines
-    ;       do_not_ignore_blank_lines.
+:- type blank_lines
+    --->    no_blank_lines
+    ;       ignore_blank_lines.
+
+    % Should records (and the header, if present) be allowed to have more than
+    % the expected number of fields?
+    %
+:- type trailing_fields
+    --->    no_trailing_fields
+    ;       ignore_trailing_fields.
 
 %----------------------------------------------------------------------------%
 %
@@ -125,8 +135,9 @@
 
 :- type reader_params
     --->    reader_params(
-                ignore_blank_lines :: ignore_blank_lines,
-                field_delimiter    :: char
+                blank_lines     :: blank_lines,
+                trailing_fields :: trailing_fields,
+                field_delimiter :: char
             ).
 
     % This type specifies whether the CSV data begins with a header line or
@@ -394,15 +405,17 @@
                 % What limit, if any, is applied  to the width of fields
                 % in the header?
 
-                init_from_header_time_whitespace :: trim_whitespace,
+                init_from_header_trim_whitespace :: trim_whitespace,
                 % Should leading- and trailing-whitespace be stripped from
                 % the header fields?
 
-                init_from_header_field_delimiter :: char,
-                % The field delimiter character to use.
-
-                init_from_header_ignore_blank_lines :: ignore_blank_lines
+                init_from_header_blank_lines :: blank_lines,
                 % Should blank lines be ignored?
+
+                init_from_header_trailing_fields :: trailing_fields,
+
+                init_from_header_field_delimiter :: char
+                % The field delimiter character to use.
             ).
 
     % The following function is provided for backwards compatibility
@@ -702,11 +715,12 @@ make_error_message(Error) = Msg :-
 
 :- type reader(Stream)
     --->    csv_reader(
-                csv_stream             :: Stream,
-                csv_header_desc        :: header_desc,
-                csv_record_desc        :: record_desc,
-                csv_field_delimiter    :: char,
-                csv_ignore_blank_lines :: ignore_blank_lines,
+                csv_stream          :: Stream,
+                csv_header_desc     :: header_desc,
+                csv_record_desc     :: record_desc,
+                csv_field_delimiter :: char,
+                csv_blank_lines     :: blank_lines,
+                csv_trailing_fields :: trailing_fields,
                 % These fields are set directly be the user.
 
                 csv_field_limit  :: record_field_limit,
@@ -716,30 +730,40 @@ make_error_message(Error) = Msg :-
 
 init_reader(Stream, HeaderDesc, RecordDesc, Reader, !State) :-
     Params = reader_params(
-        do_not_ignore_blank_lines,
+        ignore_blank_lines,
+        no_trailing_fields,
         default_field_delimiter
     ),
     init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State).
 
 init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State) :-
     Params = reader_params(
-        IgnoreBlankLines,
+        BlankLines,
+        TrailingFields,
         FieldDelimiter
     ),
     list.length(RecordDesc, NumFields),
-    FieldLimit = exactly(NumFields),
-    WidthLimit = get_max_field_width(HeaderDesc, RecordDesc),
+    (
+        TrailingFields = no_trailing_fields,
+        FieldLimit = exactly(NumFields),
+        WidthLimit = get_max_field_width(HeaderDesc, RecordDesc)
+    ;
+        TrailingFields = ignore_trailing_fields,
+        FieldLimit = no_limit,
+        WidthLimit = no_limit
+    ),
     ( if is_invalid_delimiter(FieldDelimiter)
     then throw(invalid_field_delimiter_error(FieldDelimiter))
     else true
     ),
     Reader = csv_reader(Stream, HeaderDesc, RecordDesc, FieldDelimiter,
-        IgnoreBlankLines, FieldLimit, WidthLimit).
+        BlankLines, TrailingFields, FieldLimit, WidthLimit).
 
 init_reader_delimiter(Stream, HeaderDesc, RecordDesc, FieldDelimiter, Reader,
         !State) :-
     Params = reader_params(
-        do_not_ignore_blank_lines,
+        no_blank_lines,
+        no_trailing_fields,
         FieldDelimiter
     ),
     init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State).
@@ -752,8 +776,9 @@ init_from_header_params(RecordFieldLimit, FieldWidthLimit, TrimWhitespace,
         RecordFieldLimit,
         FieldWidthLimit,
         TrimWhitespace,
-        Delimiter,
-        do_not_ignore_blank_lines
+        no_blank_lines,
+        no_trailing_fields,
+        Delimiter
     ).
 
 init_reader_from_header(Stream, InitFromHeaderPred, Result, !State) :-
@@ -761,8 +786,9 @@ init_reader_from_header(Stream, InitFromHeaderPred, Result, !State) :-
         no_limit,
         no_limit,
         do_not_trim_whitespace,
-        default_field_delimiter,
-        do_not_ignore_blank_lines
+        no_blank_lines,
+        no_trailing_fields,
+        default_field_delimiter
     ),
     init_reader_from_header(Stream, Params, InitFromHeaderPred, Result,
         !State).
@@ -773,8 +799,9 @@ init_reader_from_header(Stream, FromHeaderParams, InitFromHeaderPred,
         RecordFieldLimit,
         FieldWidthLimit,
         TrimWhitespace,
-        Delimiter,
-        IgnoreBlankLines
+        BlankLines,
+        TrailingFields,
+        Delimiter
     ),
     RawParams = raw_reader_params(
         RecordFieldLimit,
@@ -790,7 +817,8 @@ init_reader_from_header(Stream, FromHeaderParams, InitFromHeaderPred,
             header_field_to_desc(TrimWhitespace, InitFromHeaderPred),
             RawHeaderFields, HeaderFields, FieldDescs, !State),
         ReaderParams = reader_params(
-            IgnoreBlankLines,
+            BlankLines,
+            TrailingFields,
             Delimiter
         ),
         init_reader(Stream, ReaderParams, no_header, FieldDescs, Reader,
@@ -829,8 +857,9 @@ init_reader_from_header_foldl(Stream, InitFromHeaderPred, Result, !Acc,
         no_limit,
         no_limit,
         do_not_trim_whitespace,
-        default_field_delimiter,
-        do_not_ignore_blank_lines
+        no_blank_lines,
+        no_trailing_fields,
+        default_field_delimiter
     ),
     init_reader_from_header_foldl(Stream, Params, InitFromHeaderPred,
         Result, !Acc, !State).
@@ -841,8 +870,9 @@ init_reader_from_header_foldl(Stream, FromHeaderParams, InitFromHeaderPred,
         RecordFieldLimit,
         FieldWidthLimit,
         TrimWhitespace,
-        Delimiter,
-        IgnoreBlankLines
+        BlankLines,
+        TrailingFields,
+        Delimiter
     ),
     RawParams = raw_reader_params(
         RecordFieldLimit,
@@ -858,7 +888,8 @@ init_reader_from_header_foldl(Stream, FromHeaderParams, InitFromHeaderPred,
             header_field_to_desc_foldl(TrimWhitespace, InitFromHeaderPred),
             RawHeaderFields, HeaderFields, FieldDescs, !Acc, !State),
         ReaderParams = reader_params(
-            IgnoreBlankLines,
+            BlankLines,
+            TrailingFields,
             Delimiter
         ),
         init_reader(Stream, ReaderParams, no_header, FieldDescs, Reader,

@@ -120,7 +120,7 @@
 %-----------------------------------------------------------------------------%
 
 get_csv(Desc, Result, !State) :-
-    Desc = csv_reader(Stream, HeaderDesc, _, _, _, _, _),
+    Desc = csv_reader(Stream, HeaderDesc, _, _, _, _, _, _),
     stream.name(Stream, Name, !State),
     (
         HeaderDesc = no_header,
@@ -186,9 +186,9 @@ get_header(Reader, Result, !State) :-
         (
             RecordResult = ok(RawHeader),
             RawHeader = raw_record(_, HeaderFields),
-            IgnoreBlankLines = Reader ^ csv_ignore_blank_lines,
+            BlankLines = Reader ^ csv_blank_lines,
             ( if
-                IgnoreBlankLines = ignore_blank_lines,
+                BlankLines = ignore_blank_lines,
                 raw_fields_are_blank(HeaderFields)
             then
                 get_header(Reader, Result, !State)
@@ -197,16 +197,22 @@ get_header(Reader, Result, !State) :-
                 list.length(RecordDesc, NumFields),
                 list.length(HeaderFields, NumHeaderFields),
                 compare(CmpResult, NumHeaderFields, NumFields),
-                (
-                    CmpResult = (=),
+                ( if
+                    (
+                        CmpResult = (=),
+                        ActualHeaderFields = HeaderFields
+                    ;
+                        CmpResult = (>),
+                        Reader ^ csv_trailing_fields = ignore_trailing_fields,
+                        list.det_take(NumFields, HeaderFields,
+                            ActualHeaderFields)
+                    )
+                then
                     HeaderFieldValues = list.map(
-                        (func(F) = F ^ raw_field_value), HeaderFields),
+                        (func(F) = F ^ raw_field_value), ActualHeaderFields),
                     Header = header(HeaderFieldValues),
                     Result = ok(Header)
-                ;
-                    ( CmpResult = (>)
-                    ; CmpResult = (<)
-                    ),
+                else
                     stream.name(get_stream(Reader), StreamName, !State),
                     string.format("expected %d fields in header: actual %d",
                         [i(NumFields), i(NumHeaderFields)], Msg),
@@ -249,17 +255,18 @@ get_record(Reader, Result, !State) :-
     (
         RecordResult = ok(RawRecord),
         RawRecord = raw_record(RecordLineNo, RawFields),
-        IgnoreBlankLines = Reader ^ csv_ignore_blank_lines,
+        BlankLines = Reader ^ csv_blank_lines,
         ( if
-            IgnoreBlankLines = ignore_blank_lines,
+            BlankLines = ignore_blank_lines,
             raw_fields_are_blank(RawFields)
         then
            get_record(Reader, Result, !State)
         else
             FieldDescs = Reader ^ csv_record_desc,
+            TrailingFields = Reader ^ csv_trailing_fields,
             FieldNo = 1,
-            process_fields(StreamName, RecordLineNo, FieldDescs, RawFields,
-                FieldNo, [], ProcessFieldsResult),
+            process_fields(TrailingFields, StreamName, RecordLineNo,
+                FieldDescs, RawFields, FieldNo, [], ProcessFieldsResult),
             (
                 ProcessFieldsResult = prr_ok(RevFields),
                 list.reverse(RevFields, Fields),
@@ -300,12 +307,12 @@ raw_fields_are_blank([Field]) :-
                 string
             ).
 
-:- pred process_fields(stream.name::in, line_number::in, record_desc::in,
-    raw_fields::in, field_number::in, field_values::in,
+:- pred process_fields(trailing_fields::in, stream.name::in, line_number::in,
+    record_desc::in, raw_fields::in, field_number::in, field_values::in,
     process_record_result::out) is det.
 
-process_fields(_, _, [], [], _, FieldValues, prr_ok(FieldValues)).
-process_fields(_, LineNo, Descs @ [_ | _], [], FieldNo, _, MaybeResult) :-
+process_fields(_, _, _, [], [], _, FieldValues, prr_ok(FieldValues)).
+process_fields(_, _, LineNo, Descs @ [_ | _], [], FieldNo, _, MaybeResult) :-
     list.length(Descs, NumRemainingDescs),
     string.format("expected %d fields in record: actual: %d",
         [i(FieldNo + NumRemainingDescs - 1), i(FieldNo - 1)], Msg),
@@ -313,23 +320,30 @@ process_fields(_, LineNo, Descs @ [_ | _], [], FieldNo, _, MaybeResult) :-
     % a more obvious one to hand.
     ColNo = 1,
     MaybeResult = prr_error(LineNo, ColNo, FieldNo, Msg).
-process_fields(_, LineNo, [], FieldValues @ [_ | _], FieldNo, _, MaybeResult) :-
-    list.length(FieldValues, NumFieldValues),
-    string.format("expected %d fields in record: actual %d",
-        [i(FieldNo + NumFieldValues), i(FieldNo)], Msg),
-    ColNo = 1,
-    MaybeResult = prr_error(LineNo, ColNo, FieldNo, Msg).
-process_fields(StreamName, LineNo, [Desc | Descs], [RawField | RawFields],
+process_fields(TrailingFields, _, LineNo, [], RawFieldValues @ [_ | _],
         FieldNo, FieldValues, MaybeResult) :-
+    (
+        TrailingFields = no_trailing_fields,
+        list.length(RawFieldValues, NumFieldValues),
+        string.format("expected %d fields in record: actual %d",
+            [i(FieldNo + NumFieldValues), i(FieldNo)], Msg),
+        ColNo = 1,
+        MaybeResult = prr_error(LineNo, ColNo, FieldNo, Msg)
+    ;
+        TrailingFields = ignore_trailing_fields,
+        MaybeResult = prr_ok(FieldValues)
+    ).
+process_fields(TrailingFields, StreamName, LineNo, [Desc | Descs],
+        [RawField | RawFields], FieldNo, FieldValues, MaybeResult) :-
     process_field(StreamName, Desc, RawField, FieldNo, MaybeFieldResult),
     (
         MaybeFieldResult = pfr_ok(FieldValue),
-        process_fields(StreamName, LineNo, Descs, RawFields, FieldNo + 1,
-            [FieldValue | FieldValues], MaybeResult)
+        process_fields(TrailingFields, StreamName, LineNo, Descs, RawFields,
+            FieldNo + 1, [FieldValue | FieldValues], MaybeResult)
     ;
         MaybeFieldResult = pfr_discard,
-        process_fields(StreamName, LineNo, Descs, RawFields, FieldNo + 1,
-            FieldValues, MaybeResult)
+        process_fields(TrailingFields, StreamName, LineNo, Descs, RawFields,
+            FieldNo + 1, FieldValues, MaybeResult)
     ;
         MaybeFieldResult = pfr_error(ErrorLineNo, ErrorColNo, ErrorFieldNo,
             ErrorMsg),

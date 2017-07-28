@@ -475,12 +475,23 @@ tests = [
     test_case(
         test_type_valid,
         "blank_lines",
-        yes(reader_params(ignore_blank_lines, ',')),
+        yes(reader_params(ignore_blank_lines, no_trailing_fields, ',')),
         header_desc(no_limit),
         [
             string_field_desc,
             string_field_desc,
             string_field_desc
+        ]
+    ),
+
+    test_case(
+        test_type_valid,
+        "trailing_fields",
+        yes(reader_params(no_blank_lines, ignore_trailing_fields, ',')),
+        header_desc(no_limit),
+        [
+            field_desc(string([]), no_limit, do_not_trim_whitespace),
+            field_desc(string([]), no_limit, do_not_trim_whitespace)
         ]
     )
 ].
