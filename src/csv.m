@@ -64,10 +64,16 @@
 :- pred is_invalid_delimiter(char::in) is semidet.
 
     % Exceptions of this type are thrown if an invalid field delimiter
-    % is passed to one of the reader initialization functions below.
+    % is passed to one of the reader initialization predicates below.
     %
 :- type invalid_field_delimiter_error
     --->    invalid_field_delimiter_error(char).
+
+    % Exceptions of this type are thrown if an invalid comment start character
+    % is pass to one of the reader initialization predicates below.
+    %
+:- type invalid_comment_char_error
+    --->    invalid_comment_char_error(char).
 
 %----------------------------------------------------------------------------%
 %
@@ -122,6 +128,23 @@
     --->    no_trailing_fields
     ;       ignore_trailing_fields.
 
+    % Should CSV data containing comment lines be accepted?
+    % A comment line begins with a comment start character in the first column
+    % and extends to the end of the line.   A comment line will be ignored.
+    %
+    % The comment start character can be any character except for:
+    %
+    % * The field delimiter character.
+    %
+    % * The QUOTATION MARK (U+0022) character.
+    %
+    % * A whitespace character (any character for which char.is_whitespace/1
+    %   is true.)
+    %
+:- type comments
+    --->    no_comments
+    ;       allow_comments(char).
+
 %----------------------------------------------------------------------------%
 %
 % CSV reader.
@@ -137,6 +160,7 @@
     --->    reader_params(
                 blank_lines     :: blank_lines,
                 trailing_fields :: trailing_fields,
+                comments        :: comments,
                 field_delimiter :: char
             ).
 
@@ -413,6 +437,8 @@
                 % Should blank lines be ignored?
 
                 init_from_header_trailing_fields :: trailing_fields,
+
+                init_from_header_comments :: comments,
 
                 init_from_header_field_delimiter :: char
                 % The field delimiter character to use.
@@ -721,6 +747,7 @@ make_error_message(Error) = Msg :-
                 csv_field_delimiter :: char,
                 csv_blank_lines     :: blank_lines,
                 csv_trailing_fields :: trailing_fields,
+                csv_comments        :: comments,
                 % These fields are set directly be the user.
 
                 csv_field_limit  :: record_field_limit,
@@ -732,6 +759,7 @@ init_reader(Stream, HeaderDesc, RecordDesc, Reader, !State) :-
     Params = reader_params(
         ignore_blank_lines,
         no_trailing_fields,
+        no_comments,
         default_field_delimiter
     ),
     init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State).
@@ -740,6 +768,7 @@ init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State) :-
     Params = reader_params(
         BlankLines,
         TrailingFields,
+        Comments,
         FieldDelimiter
     ),
     list.length(RecordDesc, NumFields),
@@ -752,18 +781,31 @@ init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State) :-
         FieldLimit = no_limit,
         WidthLimit = no_limit
     ),
-    ( if is_invalid_delimiter(FieldDelimiter)
-    then throw(invalid_field_delimiter_error(FieldDelimiter))
-    else true
+    ( if is_invalid_delimiter(FieldDelimiter) then
+        throw(invalid_field_delimiter_error(FieldDelimiter))
+    else
+        true
+    ),
+    ( if
+        Comments = allow_comments(CommentChar),
+        ( CommentChar = FieldDelimiter
+        ; CommentChar = ('"')
+        ; char.is_whitespace(CommentChar)
+        )
+    then
+        throw(invalid_comment_char_error(CommentChar))
+    else
+        true
     ),
     Reader = csv_reader(Stream, HeaderDesc, RecordDesc, FieldDelimiter,
-        BlankLines, TrailingFields, FieldLimit, WidthLimit).
+        BlankLines, TrailingFields, Comments, FieldLimit, WidthLimit).
 
 init_reader_delimiter(Stream, HeaderDesc, RecordDesc, FieldDelimiter, Reader,
         !State) :-
     Params = reader_params(
         no_blank_lines,
         no_trailing_fields,
+        no_comments,
         FieldDelimiter
     ),
     init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State).
@@ -778,6 +820,7 @@ init_from_header_params(RecordFieldLimit, FieldWidthLimit, TrimWhitespace,
         TrimWhitespace,
         no_blank_lines,
         no_trailing_fields,
+        no_comments,
         Delimiter
     ).
 
@@ -788,6 +831,7 @@ init_reader_from_header(Stream, InitFromHeaderPred, Result, !State) :-
         do_not_trim_whitespace,
         no_blank_lines,
         no_trailing_fields,
+        no_comments,
         default_field_delimiter
     ),
     init_reader_from_header(Stream, Params, InitFromHeaderPred, Result,
@@ -801,6 +845,7 @@ init_reader_from_header(Stream, FromHeaderParams, InitFromHeaderPred,
         TrimWhitespace,
         BlankLines,
         TrailingFields,
+        Comments,
         Delimiter
     ),
     RawParams = raw_reader_params(
@@ -819,6 +864,7 @@ init_reader_from_header(Stream, FromHeaderParams, InitFromHeaderPred,
         ReaderParams = reader_params(
             BlankLines,
             TrailingFields,
+            Comments,
             Delimiter
         ),
         init_reader(Stream, ReaderParams, no_header, FieldDescs, Reader,
@@ -859,6 +905,7 @@ init_reader_from_header_foldl(Stream, InitFromHeaderPred, Result, !Acc,
         do_not_trim_whitespace,
         no_blank_lines,
         no_trailing_fields,
+        no_comments,
         default_field_delimiter
     ),
     init_reader_from_header_foldl(Stream, Params, InitFromHeaderPred,
@@ -872,6 +919,7 @@ init_reader_from_header_foldl(Stream, FromHeaderParams, InitFromHeaderPred,
         TrimWhitespace,
         BlankLines,
         TrailingFields,
+        Comments,
         Delimiter
     ),
     RawParams = raw_reader_params(
@@ -890,6 +938,7 @@ init_reader_from_header_foldl(Stream, FromHeaderParams, InitFromHeaderPred,
         ReaderParams = reader_params(
             BlankLines,
             TrailingFields,
+            Comments,
             Delimiter
         ),
         init_reader(Stream, ReaderParams, no_header, FieldDescs, Reader,

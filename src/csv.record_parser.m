@@ -72,6 +72,15 @@ get_client_field_width(client_raw_reader(R)) = R ^ csv_raw_width_limit.
 get_client_field_delimiter(client_reader(R)) = R ^ csv_field_delimiter.
 get_client_field_delimiter(client_raw_reader(R)) = R ^ csv_raw_delimiter.
 
+:- func get_client_comments(client(Stream)) = comments
+    <= (
+        stream.line_oriented(Stream, State),
+        stream.putback(Stream, char, State, Error)
+    ).
+
+get_client_comments(client_reader(R)) = R ^ csv_comments.
+get_client_comments(client_raw_reader(_)) = no_comments.
+
 %-----------------------------------------------------------------------------%
 %
 % Reading raw records.
@@ -93,11 +102,30 @@ get_client_field_delimiter(client_raw_reader(R)) = R ^ csv_raw_delimiter.
             % The last character we saw was something else.
 
 get_next_record(Reader, Result, !State) :-
-    get_fields(Reader, [], Result, last_seen_start, _, 0, _NumFields,
-        0, _ColNo, !State).
+    get_fields(Reader, [], FieldsResult, last_seen_start, _, 0, _NumFields,
+        0, _ColNo, !State),
+    (
+        FieldsResult = fsr_fields(RawRecord),
+        Result = ok(RawRecord)
+    ;
+        FieldsResult = fsr_comment_line,
+        get_next_record(Reader, Result, !State)
+    ;
+        FieldsResult = fsr_eof,
+        Result = eof
+    ;
+        FieldsResult = fsr_error(Error),
+        Result = error(Error)
+    ).
+
+:- type fields_result(Error)
+    --->    fsr_fields(raw_record)
+    ;       fsr_comment_line
+    ;       fsr_eof
+    ;       fsr_error(csv.error(Error)).
 
 :- pred get_fields(client(Stream)::in, raw_fields::in,
-    record_result(Error)::out, last_seen::in, last_seen::out,
+    fields_result(Error)::out, last_seen::in, last_seen::out,
     int::in, int::out, column_number::in, column_number::out,
     State::di, State::uo) is det
     <= (
@@ -131,29 +159,32 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
                 !.FieldsRead,
                 "record field limit exceeded"
             ),
-            Result = error(Error)
+            Result = fsr_error(Error)
         else
             !:Fields = [Field | !.Fields],
             get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead,
                 !ColNo, !State)
         )
     ;
+        FieldResult = fr_comment_line,
+        Result = fsr_comment_line
+    ;
         FieldResult = fr_error(Error),
-        Result = error(Error)
+        Result = fsr_error(Error)
     ;
         FieldResult = fr_end_of_record,
         list.reverse(!Fields),
-        Result = ok(raw_record(LineNo, !.Fields))
+        Result = fsr_fields(raw_record(LineNo, !.Fields))
     ;
         FieldResult = fr_eof,
         (
             !.Fields = [],
-            Result = eof
+            Result = fsr_eof
         ;
             % The EOF was the terminating this record.
             !.Fields = [_ | _],
             list.reverse(!Fields),
-            Result = ok(raw_record(LineNo, !.Fields))
+            Result = fsr_fields(raw_record(LineNo, !.Fields))
         )
     ).
 
@@ -165,6 +196,7 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
 :- type field_result(Error)
     --->    fr_field(raw_field)
     ;       fr_error(csv.error(Error))
+    ;       fr_comment_line
     ;       fr_end_of_record
     ;       fr_eof.
 
@@ -201,6 +233,23 @@ next_raw_field(Reader, StartLineNo, FieldNo, FieldResult, !LastSeen,
             !:LastSeen = last_seen_delimiter,
             Field = raw_field("", StartLineNo, !.ColNo),
             FieldResult = fr_field(Field)
+        else if
+            Comments = get_client_comments(Reader),
+            Comments = allow_comments(CommentChar),
+            Char = CommentChar
+        then
+            consume_until_next_nl_or_eof(Reader, CommentResult, !State),
+            (
+                CommentResult = ok,
+                ( if !.LastSeen = last_seen_start then
+                    FieldResult = fr_comment_line
+                else
+                    FieldResult = fr_end_of_record
+                )
+            ;
+                CommentResult = error(Error),
+                FieldResult = fr_error(Error)
+            )
         else if
             Char = ('"')
         then
@@ -432,6 +481,34 @@ next_unquoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
         GetResult = error(Error),
         Result = fr_error(stream_error(Error))
     ).
+
+
+%-----------------------------------------------------------------------------%
+
+:- pred consume_until_next_nl_or_eof(client(Stream)::in,
+    csv.res(Error)::out, State::di, State::uo) is det
+    <= (
+        stream.line_oriented(Stream, State),
+        stream.putback(Stream, char, State, Error)
+    ).
+
+consume_until_next_nl_or_eof(Reader, Result, !State) :-
+    Stream = get_client_stream(Reader),
+    stream.get(Stream, ReadResult, !State),
+    (
+        ReadResult = ok(Char),
+        ( if Char = ('\n')
+        then Result = ok
+        else consume_until_next_nl_or_eof(Reader, Result, !State)
+        )
+    ;
+        ReadResult = eof,
+        Result = ok
+    ;
+        ReadResult = error(Error),
+        Result = error(stream_error(Error))
+    ).
+
 
 %-----------------------------------------------------------------------------%
 

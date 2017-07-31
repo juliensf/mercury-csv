@@ -1,0 +1,6 @@
+# This line is a comment.
+Header1,Header2,Header3
+# This line is another comment
+# ... so is this one.
+foo,bar,baz
+"####","   ","#foo"

@@ -120,7 +120,7 @@
 %-----------------------------------------------------------------------------%
 
 get_csv(Desc, Result, !State) :-
-    Desc = csv_reader(Stream, HeaderDesc, _, _, _, _, _, _),
+    Desc = csv_reader(Stream, HeaderDesc, _, _, _, _, _, _, _),
     stream.name(Stream, Name, !State),
     (
         HeaderDesc = no_header,
