@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2015, 2017 Julien Fischer.
+% Copyright (C) 2013-2015, 2017-2018 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 
@@ -563,9 +563,10 @@ process_field_apply_actions_floatstr(Actions, RawField, FieldNo,
             ActionResult = ok(RawFieldPrime),
             % Check that the resulting string is still a float
             % after any used-specified transformations.
-            ( if string.to_float(RawFieldPrime, _)
-            then MaybeResult = pfr_ok(floatstr(RawFieldPrime))
-            else error("field is not a float after actions")
+            ( if string.to_float(RawFieldPrime, _) then
+                MaybeResult = pfr_ok(floatstr(RawFieldPrime))
+            else
+                error("field is not a float after actions")
             )
         ;
             ActionResult = error(ActionError),
@@ -648,9 +649,10 @@ process_field_apply_actions_date(Format, Actions, RawField, FieldNo,
 
 convert_date(ConvertPred, Separator, DateStr, MaybeDate) :-
     DateComponentStrs = string.split_at_string(Separator, DateStr),
-    ( if ConvertPred(DateComponentStrs, DateTime)
-    then MaybeDate = ok(DateTime)
-    else MaybeDate = error("not a valid date")
+    ( if ConvertPred(DateComponentStrs, DateTime) then
+        MaybeDate = ok(DateTime)
+    else
+        MaybeDate = error("not a valid date")
     ).
 
 :- pred yyyy_mm_dd_to_date(list(string)::in, date::out) is semidet.

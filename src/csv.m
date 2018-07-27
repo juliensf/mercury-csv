@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2017 Julien Fischer.
+% Copyright (C) 2013-2018 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 %
@@ -977,9 +977,10 @@ get_stream(Reader) = Reader ^ csv_stream.
 get_field_delimiter(Reader) = Reader ^ csv_field_delimiter.
 
 set_field_delimiter(Delimiter, !Reader) :-
-    ( if is_invalid_delimiter(Delimiter)
-    then throw(invalid_field_delimiter_error(Delimiter))
-    else !Reader ^ csv_field_delimiter := Delimiter
+    ( if is_invalid_delimiter(Delimiter) then
+        throw(invalid_field_delimiter_error(Delimiter))
+    else
+        !Reader ^ csv_field_delimiter := Delimiter
     ).
 
 get_header_desc(Reader) = Reader ^ csv_header_desc.
@@ -1038,9 +1039,10 @@ get_max_field_width_2([FieldDesc | FieldDescs], !MaybeLimit) :-
             !:MaybeLimit = no_limit
         ;
             FieldWidthLimit = limited(FieldLimit),
-            ( if FieldLimit > Limit
-            then !:MaybeLimit = FieldWidthLimit
-            else true
+            ( if FieldLimit > Limit then
+                !:MaybeLimit = FieldWidthLimit
+            else
+                true
             ),
             get_max_field_width_2(FieldDescs, !MaybeLimit)
         )
@@ -1179,17 +1181,19 @@ init_raw_reader(Stream, Reader, !State) :-
 
 init_raw_reader(Stream, Params, Reader, !State) :-
     Params = raw_reader_params(RecordLimit, FieldWidthLimit, FieldDelimiter),
-    ( if is_invalid_delimiter(FieldDelimiter)
-    then throw(invalid_field_delimiter_error(FieldDelimiter))
-    else true
+    ( if is_invalid_delimiter(FieldDelimiter) then
+        throw(invalid_field_delimiter_error(FieldDelimiter))
+    else
+        true
     ),
     Reader = raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter).
 
 init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
         !State) :-
-    ( if is_invalid_delimiter(FieldDelimiter)
-    then throw(invalid_field_delimiter_error(FieldDelimiter))
-    else true
+    ( if is_invalid_delimiter(FieldDelimiter) then
+        throw(invalid_field_delimiter_error(FieldDelimiter))
+    else
+        true
     ),
     Reader = raw_reader(Stream, RecordLimit, FieldWidthLimit,
         FieldDelimiter).

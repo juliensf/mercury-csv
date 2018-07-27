@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2015 Julien Fischer.
+% Copyright (C) 2013-2018 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 %
@@ -139,8 +139,8 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
     next_raw_field(Reader, StartLineNo, NextFieldNo, FieldResult, !LastSeen,
         !ColNo, !State),
     Stream = get_client_stream(Reader),
-    % NOTE: LineNo is not necessarily the same as StartLineNo since quoted fields
-    % can contain newlines.
+    % NOTE: LineNo is not necessarily the same as StartLineNo since quoted
+    % fields can contain newlines.
     stream.get_line(Stream, LineNo, !State),
     (
         FieldResult = fr_field(Field),
@@ -323,7 +323,8 @@ next_quoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
                         AfterCR_Result = ok(AfterCR_Char),
                         ( if AfterCR_Char = ('\n') then
                             stream.unget(Stream, '\n', !State),
-                            FieldValue = char_buffer.to_string(Buffer, !.State),
+                            FieldValue = char_buffer.to_string(Buffer,
+                                !.State),
                             Field = raw_field(FieldValue, StartLineNo,
                                 StartColNo),
                             Result = fr_field(Field)
@@ -466,8 +467,8 @@ next_unquoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
                         "field width exceeded"),
                     Result = fr_error(Error)
                 else
-                    next_unquoted_field(Reader, StartLineNo, StartColNo, FieldNo,
-                        Buffer, Result, !LastSeen, !ColNo, !State)
+                    next_unquoted_field(Reader, StartLineNo, StartColNo,
+                        FieldNo, Buffer, Result, !LastSeen, !ColNo, !State)
                 )
             )
         )
@@ -497,9 +498,10 @@ consume_until_next_nl_or_eof(Reader, Result, !State) :-
     stream.get(Stream, ReadResult, !State),
     (
         ReadResult = ok(Char),
-        ( if Char = ('\n')
-        then Result = ok
-        else consume_until_next_nl_or_eof(Reader, Result, !State)
+        ( if Char = ('\n') then
+            Result = ok
+        else
+            consume_until_next_nl_or_eof(Reader, Result, !State)
         )
     ;
         ReadResult = eof,
@@ -508,7 +510,6 @@ consume_until_next_nl_or_eof(Reader, Result, !State) :-
         ReadResult = error(Error),
         Result = error(stream_error(Error))
     ).
-
 
 %-----------------------------------------------------------------------------%
 
