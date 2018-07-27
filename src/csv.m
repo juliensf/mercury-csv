@@ -230,13 +230,13 @@
             % A Mercury string.
 
     ;       date(date_format, field_actions(date))
-            % A Mercury calander.date/0 value.
+            % A Mercury calendar.date/0 value.
             % The time component of the resulting date is always set to
             % midnight.  (XXX because the standard library doesn't have type
             % that represents only dates without a time component.)
 
     ;       date_time(date_time_format, field_actions(date))
-            % A Mercury calander.date/0 value.
+            % A Mercury calendar.date/0 value.
             % The time component is set as specified.
             % XXX support for this is currently very limited.
 
