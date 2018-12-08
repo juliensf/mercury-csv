@@ -434,13 +434,6 @@ next_unquoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
             Field = raw_field(FieldValue, StartLineNo, StartColNo),
             Result = fr_field(Field)
         else if
-            Char = ('"')
-        then
-            stream.name(Stream, Name, !State),
-            stream.get_line(Stream, LineNo, !State),
-            Result = fr_error(csv_error(Name, LineNo, !.ColNo, FieldNo,
-                "unexpected quote"))
-        else if
             Char = ('\n')
         then
             !:LastSeen = last_seen_other,

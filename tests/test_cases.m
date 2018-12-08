@@ -341,7 +341,7 @@ tests = [
     ),
 
     test_case(
-        test_type_invalid,
+        test_type_valid,
         "unmatched_quote3",
         no,
         no_header,
