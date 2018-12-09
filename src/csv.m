@@ -616,7 +616,9 @@
     --->    raw_reader_params(
                 raw_record_field_limit :: record_field_limit,
                 raw_field_width_limit  :: field_width_limit,
-                raw_field_delimiter    :: char
+                raw_field_delimiter    :: char,
+                raw_quotation_mark_in_unquoted_field
+                    :: quotation_mark_in_unquoted_field
             ).
 
 :- pred init_raw_reader(Stream::in, raw_reader(Stream)::out,
@@ -871,7 +873,8 @@ init_reader_from_header(Stream, FromHeaderParams, InitFromHeaderPred,
     RawParams = raw_reader_params(
         RecordFieldLimit,
         FieldWidthLimit,
-        Delimiter
+        Delimiter,
+        QuotationMarkInUnquotedField
     ),
     init_raw_reader(Stream, RawParams, RawReader, !State),
     get_raw_record(RawReader, RawRecordResult, !State),
@@ -948,7 +951,8 @@ init_reader_from_header_foldl(Stream, FromHeaderParams, InitFromHeaderPred,
     RawParams = raw_reader_params(
         RecordFieldLimit,
         FieldWidthLimit,
-        Delimiter
+        Delimiter,
+        QuotationMarkInUnquotedField
     ),
     init_raw_reader(Stream, RawParams, RawReader, !State),
     get_raw_record(RawReader, RawRecordResult, !State),
@@ -1194,23 +1198,28 @@ maybe_string_field_desc =
                 csv_raw_stream      :: Stream,
                 csv_raw_field_limit :: record_field_limit,
                 csv_raw_width_limit :: field_width_limit,
-                csv_raw_delimiter   :: char
+                csv_raw_delimiter   :: char,
+                csv_raw_quotation_mark_in_unquoted_field
+                    :: quotation_mark_in_unquoted_field
             ).
 
 %----------------------------------------------------------------------------%
 
 init_raw_reader(Stream, Reader, !State) :-
-    Params = raw_reader_params(no_limit, no_limit, default_field_delimiter),
+    Params = raw_reader_params(no_limit, no_limit, default_field_delimiter,
+        no_quotation_mark_in_unquoted_field),
     init_raw_reader(Stream, Params, Reader, !State).
 
 init_raw_reader(Stream, Params, Reader, !State) :-
-    Params = raw_reader_params(RecordLimit, FieldWidthLimit, FieldDelimiter),
+    Params = raw_reader_params(RecordLimit, FieldWidthLimit, FieldDelimiter,
+        QuotationMarkInUnquotedField),
     ( if is_invalid_delimiter(FieldDelimiter) then
         throw(invalid_field_delimiter_error(FieldDelimiter))
     else
         true
     ),
-    Reader = raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter).
+    Reader = raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter,
+        QuotationMarkInUnquotedField).
 
 init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
         !State) :-
@@ -1220,7 +1229,7 @@ init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
         true
     ),
     Reader = raw_reader(Stream, RecordLimit, FieldWidthLimit,
-        FieldDelimiter).
+        FieldDelimiter, no_quotation_mark_in_unquoted_field).
 
 %----------------------------------------------------------------------------%
 

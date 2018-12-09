@@ -90,8 +90,8 @@ get_client_comments(client_raw_reader(_)) = no_comments.
 
 get_client_quotation_mark_in_unquoted_field(client_reader(R)) =
     R ^ csv_quotation_mark_in_unquoted_field.
-get_client_quotation_mark_in_unquoted_field(client_raw_reader(_)) =
-    no_quotation_mark_in_unquoted_field.
+get_client_quotation_mark_in_unquoted_field(client_raw_reader(R)) =
+    R ^ csv_raw_quotation_mark_in_unquoted_field.
 
 %-----------------------------------------------------------------------------%
 %
