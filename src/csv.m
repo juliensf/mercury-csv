@@ -145,6 +145,13 @@
     --->    no_comments
     ;       allow_comments(char).
 
+    % Should the QUOTATION MARK (U+0022) character be accepted if it occurs
+    % as the non-initial character of an unquoted field?
+    %
+:- type quotation_mark_in_unquoted_field
+    --->    no_quotation_mark_in_unquoted_field
+    ;       allow_quotation_mark_in_unquoted_field.
+
 %----------------------------------------------------------------------------%
 %
 % CSV reader.
@@ -161,6 +168,8 @@
                 blank_lines     :: blank_lines,
                 trailing_fields :: trailing_fields,
                 comments        :: comments,
+                quotation_mark_in_unquoted_field
+                    :: quotation_mark_in_unquoted_field,
                 field_delimiter :: char
             ).
 
@@ -286,7 +295,6 @@
     ;       yyyy_b_dd(string)   % e.g. 2013-Mar-03.
     ;       dd_b_yyyy(string)   % e.g. 03-Mar-2013.
     ;       b_dd_yyyy(string).  % e.g. Mar-03-2013.
-
 
     % The first string argument specifies how the date components are
     % separated.
@@ -439,6 +447,9 @@
                 init_from_header_trailing_fields :: trailing_fields,
 
                 init_from_header_comments :: comments,
+
+                init_quotation_mark_in_unquoted_field
+                :: quotation_mark_in_unquoted_field,
 
                 init_from_header_field_delimiter :: char
                 % The field delimiter character to use.
@@ -748,6 +759,8 @@ make_error_message(Error) = Msg :-
                 csv_blank_lines     :: blank_lines,
                 csv_trailing_fields :: trailing_fields,
                 csv_comments        :: comments,
+                csv_quotation_mark_in_unquoted_field
+                    :: quotation_mark_in_unquoted_field,
                 % These fields are set directly be the user.
 
                 csv_field_limit  :: record_field_limit,
@@ -760,6 +773,7 @@ init_reader(Stream, HeaderDesc, RecordDesc, Reader, !State) :-
         ignore_blank_lines,
         no_trailing_fields,
         no_comments,
+        no_quotation_mark_in_unquoted_field,
         default_field_delimiter
     ),
     init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State).
@@ -769,6 +783,7 @@ init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State) :-
         BlankLines,
         TrailingFields,
         Comments,
+        QuotationMarkInUnquotedField,
         FieldDelimiter
     ),
     list.length(RecordDesc, NumFields),
@@ -798,7 +813,8 @@ init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State) :-
         true
     ),
     Reader = csv_reader(Stream, HeaderDesc, RecordDesc, FieldDelimiter,
-        BlankLines, TrailingFields, Comments, FieldLimit, WidthLimit).
+        BlankLines, TrailingFields, Comments, QuotationMarkInUnquotedField,
+        FieldLimit, WidthLimit).
 
 init_reader_delimiter(Stream, HeaderDesc, RecordDesc, FieldDelimiter, Reader,
         !State) :-
@@ -806,6 +822,7 @@ init_reader_delimiter(Stream, HeaderDesc, RecordDesc, FieldDelimiter, Reader,
         no_blank_lines,
         no_trailing_fields,
         no_comments,
+        no_quotation_mark_in_unquoted_field,
         FieldDelimiter
     ),
     init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State).
@@ -821,6 +838,7 @@ init_from_header_params(RecordFieldLimit, FieldWidthLimit, TrimWhitespace,
         no_blank_lines,
         no_trailing_fields,
         no_comments,
+        no_quotation_mark_in_unquoted_field,
         Delimiter
     ).
 
@@ -832,6 +850,7 @@ init_reader_from_header(Stream, InitFromHeaderPred, Result, !State) :-
         no_blank_lines,
         no_trailing_fields,
         no_comments,
+        no_quotation_mark_in_unquoted_field,
         default_field_delimiter
     ),
     init_reader_from_header(Stream, Params, InitFromHeaderPred, Result,
@@ -846,6 +865,7 @@ init_reader_from_header(Stream, FromHeaderParams, InitFromHeaderPred,
         BlankLines,
         TrailingFields,
         Comments,
+        QuotationMarkInUnquotedField,
         Delimiter
     ),
     RawParams = raw_reader_params(
@@ -865,6 +885,7 @@ init_reader_from_header(Stream, FromHeaderParams, InitFromHeaderPred,
             BlankLines,
             TrailingFields,
             Comments,
+            QuotationMarkInUnquotedField,
             Delimiter
         ),
         init_reader(Stream, ReaderParams, no_header, FieldDescs, Reader,
@@ -906,6 +927,7 @@ init_reader_from_header_foldl(Stream, InitFromHeaderPred, Result, !Acc,
         no_blank_lines,
         no_trailing_fields,
         no_comments,
+        no_quotation_mark_in_unquoted_field,
         default_field_delimiter
     ),
     init_reader_from_header_foldl(Stream, Params, InitFromHeaderPred,
@@ -920,6 +942,7 @@ init_reader_from_header_foldl(Stream, FromHeaderParams, InitFromHeaderPred,
         BlankLines,
         TrailingFields,
         Comments,
+        QuotationMarkInUnquotedField,
         Delimiter
     ),
     RawParams = raw_reader_params(
@@ -939,6 +962,7 @@ init_reader_from_header_foldl(Stream, FromHeaderParams, InitFromHeaderPred,
             BlankLines,
             TrailingFields,
             Comments,
+            QuotationMarkInUnquotedField,
             Delimiter
         ),
         init_reader(Stream, ReaderParams, no_header, FieldDescs, Reader,

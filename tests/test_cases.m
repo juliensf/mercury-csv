@@ -341,11 +341,37 @@ tests = [
     ),
 
     test_case(
-        test_type_valid,
+        test_type_invalid,
         "unmatched_quote3",
         no,
         no_header,
         [
+            field_desc(string([]), no_limit, do_not_trim_whitespace),
+            field_desc(string([]), no_limit, do_not_trim_whitespace)
+        ]
+    ),
+
+    test_case(
+        test_type_valid,
+        "qm_in_uqf1",
+        yes(reader_params(no_blank_lines, no_trailing_fields, no_comments,
+            allow_quotation_mark_in_unquoted_field, ',')),
+        no_header,
+        [
+            field_desc(string([]), no_limit, do_not_trim_whitespace),
+            field_desc(string([]), no_limit, do_not_trim_whitespace),
+            field_desc(string([]), no_limit, do_not_trim_whitespace)
+        ]
+    ),
+
+    test_case(
+        test_type_invalid,
+        "qm_in_uqf2",
+        yes(reader_params(no_blank_lines, no_trailing_fields, no_comments,
+            allow_quotation_mark_in_unquoted_field, ',')),
+        no_header,
+        [
+            field_desc(string([]), no_limit, do_not_trim_whitespace),
             field_desc(string([]), no_limit, do_not_trim_whitespace),
             field_desc(string([]), no_limit, do_not_trim_whitespace)
         ]
@@ -475,7 +501,8 @@ tests = [
     test_case(
         test_type_valid,
         "blank_lines",
-        yes(reader_params(ignore_blank_lines, no_trailing_fields, no_comments, ',')),
+        yes(reader_params(ignore_blank_lines, no_trailing_fields, no_comments,
+            no_quotation_mark_in_unquoted_field, ',')),
         header_desc(no_limit),
         [
             string_field_desc,
@@ -487,7 +514,8 @@ tests = [
     test_case(
         test_type_valid,
         "trailing_fields",
-        yes(reader_params(no_blank_lines, ignore_trailing_fields, no_comments, ',')),
+        yes(reader_params(no_blank_lines, ignore_trailing_fields, no_comments,
+            no_quotation_mark_in_unquoted_field, ',')),
         header_desc(no_limit),
         [
             field_desc(string([]), no_limit, do_not_trim_whitespace),
@@ -498,7 +526,8 @@ tests = [
     test_case(
         test_type_valid,
         "comments",
-        yes(reader_params(no_blank_lines, no_trailing_fields, allow_comments('#'), ',')),
+        yes(reader_params(no_blank_lines, no_trailing_fields, allow_comments('#'),
+            no_quotation_mark_in_unquoted_field, ',')),
         header_desc(no_limit),
         [
             field_desc(string([]), no_limit, do_not_trim_whitespace),

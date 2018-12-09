@@ -81,6 +81,18 @@ get_client_field_delimiter(client_raw_reader(R)) = R ^ csv_raw_delimiter.
 get_client_comments(client_reader(R)) = R ^ csv_comments.
 get_client_comments(client_raw_reader(_)) = no_comments.
 
+:- func get_client_quotation_mark_in_unquoted_field(client(Stream)) =
+    quotation_mark_in_unquoted_field
+    <= (
+        stream.line_oriented(Stream, State),
+        stream.putback(Stream, char, State, Error)
+    ).
+
+get_client_quotation_mark_in_unquoted_field(client_reader(R)) =
+    R ^ csv_quotation_mark_in_unquoted_field.
+get_client_quotation_mark_in_unquoted_field(client_raw_reader(_)) =
+    no_quotation_mark_in_unquoted_field.
+
 %-----------------------------------------------------------------------------%
 %
 % Reading raw records.
@@ -433,6 +445,16 @@ next_unquoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
             FieldValue = char_buffer.to_string(Buffer, !.State),
             Field = raw_field(FieldValue, StartLineNo, StartColNo),
             Result = fr_field(Field)
+        else if
+            Char = ('"'),
+            QuotationMarkInUnquotedField =
+                get_client_quotation_mark_in_unquoted_field(Reader),
+            QuotationMarkInUnquotedField = no_quotation_mark_in_unquoted_field
+        then
+             stream.name(Stream, Name, !State),
+             stream.get_line(Stream, LineNo, !State),
+             Result = fr_error(csv_error(Name, LineNo, !.ColNo, FieldNo,
+                 "unexpected quote"))
         else if
             Char = ('\n')
         then
