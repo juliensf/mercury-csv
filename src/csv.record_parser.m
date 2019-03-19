@@ -186,7 +186,7 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
     ;
         FieldResult = fr_end_of_record,
         list.reverse(!Fields),
-        Result = fsr_fields(raw_record(LineNo, !.Fields))
+        Result = fsr_fields(raw_record(StartLineNo, !.Fields))
     ;
         FieldResult = fr_eof,
         (
@@ -196,7 +196,7 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
             % The EOF was the terminating this record.
             !.Fields = [_ | _],
             list.reverse(!Fields),
-            Result = fsr_fields(raw_record(LineNo, !.Fields))
+            Result = fsr_fields(raw_record(StartLineNo, !.Fields))
         )
     ).
 
