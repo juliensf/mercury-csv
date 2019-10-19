@@ -164,7 +164,16 @@ get_fields(Reader, NextChar, !.Fields, Result, !LastSeen, !FieldsRead,
     % fields can contain newlines.
     stream.get_line(Stream, LineNo, !State),
     (
-        FieldResult = fr_field(Field),
+        (
+            FieldResult = fr_field(Field),
+            NextCharPrime = next_char_none,
+            LineNoOffset = 0
+        ;
+            FieldResult = fr_field_and_nl(Field),
+            NextCharPrime = next_char_nl,
+            LineNoOffset = 1
+
+        ),
         !:FieldsRead = !.FieldsRead + 1,
         MaybeFieldLimit = get_client_field_limit(Reader),
         ( if
@@ -175,7 +184,7 @@ get_fields(Reader, NextChar, !.Fields, Result, !LastSeen, !FieldsRead,
             StartCol = Field ^ raw_field_col_no,
             Error = csv_error(
                 Name,
-                LineNo,
+                LineNo - LineNoOffset,
                 StartCol,
                 !.FieldsRead,
                 "record field limit exceeded"
@@ -183,30 +192,7 @@ get_fields(Reader, NextChar, !.Fields, Result, !LastSeen, !FieldsRead,
             Result = fsr_error(Error)
         else
             !:Fields = [Field | !.Fields],
-            get_fields(Reader, next_char_none, !.Fields, Result, !LastSeen,
-                !FieldsRead, !ColNo, !State)
-        )
-    ;
-        FieldResult = fr_field_and_nl(Field),
-        !:FieldsRead = !.FieldsRead + 1,
-        MaybeFieldLimit = get_client_field_limit(Reader),
-        ( if
-            MaybeFieldLimit = exactly(FieldLimit),
-            !.FieldsRead > FieldLimit
-        then
-            stream.name(Stream, Name, !State),
-            StartCol = Field ^ raw_field_col_no,
-            Error = csv_error(
-                Name,
-                LineNo - 1, % Since we've read the next newline.
-                StartCol,
-                !.FieldsRead,
-                "record field limit exceeded"
-            ),
-            Result = fsr_error(Error)
-        else
-            !:Fields = [Field | !.Fields],
-            get_fields(Reader, next_char_nl, !.Fields, Result, !LastSeen,
+            get_fields(Reader, NextCharPrime, !.Fields, Result, !LastSeen,
                 !FieldsRead, !ColNo, !State)
         )
     ;
