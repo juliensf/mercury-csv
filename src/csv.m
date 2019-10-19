@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2018 Julien Fischer.
+% Copyright (C) 2013-2019 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 %
@@ -391,14 +391,14 @@
     reader(Stream)::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
 :- pred init_reader(Stream::in, reader_params::in, header_desc::in,
     record_desc::in, reader(Stream)::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
     % As above, but use the specified field delimiter character instead
@@ -409,7 +409,7 @@
     char::in, reader(Stream)::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
 %----------------------------------------------------------------------------%
@@ -475,7 +475,7 @@
     State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
     % init_reader_from_header(Stream, Params, HeaderToField, Result, !State):
@@ -489,7 +489,7 @@
     init_from_header_result(Stream, Error)::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
 %
@@ -508,7 +508,7 @@
     Acc::in, Acc::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
 :- pred init_reader_from_header_foldl(Stream::in, init_from_header_params::in,
@@ -517,7 +517,7 @@
     Acc::in, Acc::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
 %----------------------------------------------------------------------------%
@@ -529,7 +529,7 @@
 :- func get_stream(reader(Stream)) = Stream
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
     % Get and set the field delimiter.
@@ -581,19 +581,19 @@
 :- instance stream.reader(reader(Stream), record, io, csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.reader(Stream, char, io, Error)
     ).
 
 :- instance stream.reader(reader(Stream), header, io, csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.reader(Stream, char, io, Error)
     ).
 
 :- instance stream.reader(reader(Stream), csv, io, csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.reader(Stream, char, io, Error)
     ).
 
 :- instance stream.line_oriented(reader(Stream), io)
@@ -625,14 +625,14 @@
     State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
 :- pred init_raw_reader(Stream::in, raw_reader_params::in,
     raw_reader(Stream)::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
 :- pragma obsolete(init_raw_reader/7).
@@ -641,7 +641,7 @@
     State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
 :- type raw_record
@@ -692,14 +692,14 @@
         csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.reader(Stream, char, io, Error)
     ).
 
 :- instance stream.reader(raw_reader(Stream), raw_csv, io,
         csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.reader(Stream, char, io, Error)
     ).
 
 :- instance stream.line_oriented(csv.raw_reader(Stream), io)
@@ -1152,7 +1152,7 @@ maybe_string_field_desc =
 :- instance stream.reader(reader(Stream), header, io, csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.reader(Stream, char, io, Error)
     ) where
 [
     pred(get/4) is csv.typed_reader.get_header
@@ -1161,7 +1161,7 @@ maybe_string_field_desc =
 :- instance stream.reader(reader(Stream), record, io, csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.reader(Stream, char, io, Error)
     ) where
 [
     pred(get/4) is csv.typed_reader.get_record
@@ -1170,7 +1170,7 @@ maybe_string_field_desc =
 :- instance stream.reader(reader(Stream), csv.csv, io, csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.reader(Stream, char, io, Error)
     ) where
 [
     pred(get/4) is csv.typed_reader.get_csv
@@ -1248,7 +1248,7 @@ init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
         csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.reader(Stream, char, io, Error)
     ) where
 [
     pred(get/4) is csv.raw_reader.get_raw_record
@@ -1258,7 +1258,7 @@ init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
         csv.error(Error))
     <= (
         stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.reader(Stream, char, io, Error)
     ) where
 [
     pred(get/4) is csv.raw_reader.get_raw_csv

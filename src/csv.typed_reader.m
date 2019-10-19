@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2015, 2017-2018 Julien Fischer.
+% Copyright (C) 2013-2015, 2017-2019 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 
@@ -21,7 +21,7 @@
     State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
 %-----------------------------------------------------------------------------%
@@ -33,7 +33,7 @@
     T, csv.maybe_partial_res(T, Error), State, State)
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 :- mode record_fold(in, in(pred(in, in, out) is det),
     in, out, di, uo) is det.
@@ -44,7 +44,7 @@
     csv.res(Error), State, State)
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 :- mode record_fold_state(in, in(pred(in, di, uo) is det),
     out, di, uo) is det.
@@ -55,7 +55,7 @@
     T, csv.maybe_partial_res(T, Error), State, State)
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 :- mode record_fold2_state(in, in(pred(in, in, out, di, uo) is det),
     in, out, di, uo) is det.
@@ -66,7 +66,7 @@
     T, csv.maybe_partial_res(T, Error), State, State)
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 :- mode record_fold_maybe_stop(in, in(pred(in, out, in, out) is det),
     in, out, di, uo) is det.
@@ -82,7 +82,7 @@
     State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
     % get_record(Stream, Desc, Result, !State):
@@ -93,7 +93,7 @@
     State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
     % get_records(Stream, Desc, Result, !State):
@@ -105,7 +105,7 @@
     State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, char, State, Error)
     ).
 
 %-----------------------------------------------------------------------------%

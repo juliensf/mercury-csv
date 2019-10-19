@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2018 Julien Fischer.
+% Copyright (C) 2013-2019 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 %
@@ -23,7 +23,7 @@
     State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, character, State, Error)
     ).
 
 %-----------------------------------------------------------------------------%
@@ -39,7 +39,7 @@
 :- func get_client_stream(client(Stream)) = Stream
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, character, State, Error)
     ).
 
 get_client_stream(client_reader(R)) = R ^ csv_stream.
@@ -48,7 +48,7 @@ get_client_stream(client_raw_reader(R)) = R ^ csv_raw_stream.
 :- func get_client_field_limit(client(Stream)) = record_field_limit
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, character, State, Error)
     ).
 
 get_client_field_limit(client_reader(R)) = R ^ csv_field_limit.
@@ -57,7 +57,7 @@ get_client_field_limit(client_raw_reader(R)) = R ^ csv_raw_field_limit.
 :- func get_client_field_width(client(Stream)) = field_width_limit
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, character, State, Error)
     ).
 
 get_client_field_width(client_reader(R)) = R ^ csv_width_limit.
@@ -66,7 +66,7 @@ get_client_field_width(client_raw_reader(R)) = R ^ csv_raw_width_limit.
 :- func get_client_field_delimiter(client(Stream)) = char
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, character, State, Error)
     ).
 
 get_client_field_delimiter(client_reader(R)) = R ^ csv_field_delimiter.
@@ -75,7 +75,7 @@ get_client_field_delimiter(client_raw_reader(R)) = R ^ csv_raw_delimiter.
 :- func get_client_comments(client(Stream)) = comments
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, character, State, Error)
     ).
 
 get_client_comments(client_reader(R)) = R ^ csv_comments.
@@ -83,10 +83,7 @@ get_client_comments(client_raw_reader(_)) = no_comments.
 
 :- func get_client_quotation_mark_in_unquoted_field(client(Stream)) =
     quotation_mark_in_unquoted_field
-    <= (
-        stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
-    ).
+    <= stream.line_oriented(Stream, State).
 
 get_client_quotation_mark_in_unquoted_field(client_reader(R)) =
     R ^ csv_quotation_mark_in_unquoted_field.
@@ -113,9 +110,13 @@ get_client_quotation_mark_in_unquoted_field(client_raw_reader(R)) =
     ;       last_seen_other.
             % The last character we saw was something else.
 
+:- type next_char
+    --->    next_char_none
+    ;       next_char_nl.
+
 get_next_record(Reader, Result, !State) :-
-    get_fields(Reader, [], FieldsResult, last_seen_start, _, 0, _NumFields,
-        0, _ColNo, !State),
+    get_fields(Reader, next_char_none, [], FieldsResult, last_seen_start, _,
+        0, _NumFields, 0, _ColNo, !State),
     (
         FieldsResult = fsr_fields(RawRecord),
         Result = ok(RawRecord)
@@ -136,20 +137,28 @@ get_next_record(Reader, Result, !State) :-
     ;       fsr_eof
     ;       fsr_error(csv.error(Error)).
 
-:- pred get_fields(client(Stream)::in, raw_fields::in,
+:- pred get_fields(client(Stream)::in, next_char::in, raw_fields::in,
     fields_result(Error)::out, last_seen::in, last_seen::out,
     int::in, int::out, column_number::in, column_number::out,
     State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, character, State, Error)
     ).
 
-get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
+get_fields(Reader, NextChar, !.Fields, Result, !LastSeen, !FieldsRead,
+        !ColNo, !State) :-
     NextFieldNo = !.FieldsRead + 1,
-    stream.get_line(Stream, StartLineNo, !State),
-    next_raw_field(Reader, StartLineNo, NextFieldNo, FieldResult, !LastSeen,
-        !ColNo, !State),
+    stream.get_line(Stream, StartLineNo0, !State),
+    (
+        NextChar = next_char_none,
+        StartLineNo = StartLineNo0
+    ;
+        NextChar = next_char_nl,
+        StartLineNo = StartLineNo0 - 1
+    ),
+    next_raw_field(Reader, NextChar, StartLineNo, NextFieldNo, FieldResult,
+        !LastSeen, !ColNo, !State),
     Stream = get_client_stream(Reader),
     % NOTE: LineNo is not necessarily the same as StartLineNo since quoted
     % fields can contain newlines.
@@ -174,8 +183,31 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
             Result = fsr_error(Error)
         else
             !:Fields = [Field | !.Fields],
-            get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead,
-                !ColNo, !State)
+            get_fields(Reader, next_char_none, !.Fields, Result, !LastSeen,
+                !FieldsRead, !ColNo, !State)
+        )
+    ;
+        FieldResult = fr_field_and_nl(Field),
+        !:FieldsRead = !.FieldsRead + 1,
+        MaybeFieldLimit = get_client_field_limit(Reader),
+        ( if
+            MaybeFieldLimit = exactly(FieldLimit),
+            !.FieldsRead > FieldLimit
+        then
+            stream.name(Stream, Name, !State),
+            StartCol = Field ^ raw_field_col_no,
+            Error = csv_error(
+                Name,
+                LineNo - 1, % Since we've read the next newline.
+                StartCol,
+                !.FieldsRead,
+                "record field limit exceeded"
+            ),
+            Result = fsr_error(Error)
+        else
+            !:Fields = [Field | !.Fields],
+            get_fields(Reader, next_char_nl, !.Fields, Result, !LastSeen,
+                !FieldsRead, !ColNo, !State)
         )
     ;
         FieldResult = fr_comment_line,
@@ -207,23 +239,30 @@ get_fields(Reader, !.Fields, Result, !LastSeen, !FieldsRead, !ColNo, !State) :-
 
 :- type field_result(Error)
     --->    fr_field(raw_field)
+    ;       fr_field_and_nl(raw_field)
     ;       fr_error(csv.error(Error))
     ;       fr_comment_line
     ;       fr_end_of_record
     ;       fr_eof.
 
-:- pred next_raw_field(client(Stream)::in, line_number::in, field_number::in,
-    field_result(Error)::out, last_seen::in, last_seen::out,
+:- pred next_raw_field(client(Stream)::in, next_char::in, line_number::in,
+    field_number::in, field_result(Error)::out, last_seen::in, last_seen::out,
     column_number::in, column_number::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, character, State, Error)
     ).
 
-next_raw_field(Reader, StartLineNo, FieldNo, FieldResult, !LastSeen,
+next_raw_field(Reader, NextChar, StartLineNo, FieldNo, FieldResult, !LastSeen,
         !ColNo, !State) :-
     Stream = get_client_stream(Reader),
-    stream.get(Stream, GetResult, !State),
+    (
+        NextChar = next_char_none,
+        stream.get(Stream, GetResult, !State)
+    ;
+        NextChar = next_char_nl,
+        GetResult = ok('\n')
+    ),
     (
         GetResult = ok(Char),
         increment_col_no(!ColNo),
@@ -231,10 +270,9 @@ next_raw_field(Reader, StartLineNo, FieldNo, FieldResult, !LastSeen,
             Char = ('\n')
         then
             ( if !.LastSeen = last_seen_delimiter then
-                stream.unget(Stream, '\n', !State),
                 !:LastSeen = last_seen_other,
                 Field = raw_field("", StartLineNo, !.ColNo),
-                FieldResult = fr_field(Field)
+                FieldResult = fr_field_and_nl(Field)
             else
                 FieldResult = fr_end_of_record
             )
@@ -289,7 +327,7 @@ next_raw_field(Reader, StartLineNo, FieldNo, FieldResult, !LastSeen,
     column_number::in, column_number::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, character, State, Error)
     ).
 
 next_quoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
@@ -323,10 +361,9 @@ next_quoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
                     NextChar = ('\n')
                 then
                     !:LastSeen = last_seen_other,
-                    stream.unget(Stream, '\n', !State),
                     FieldValue = char_buffer.to_string(Buffer, !.State),
                     Field = raw_field(FieldValue, StartLineNo, StartColNo),
-                    Result = fr_field(Field)
+                    Result = fr_field_and_nl(Field)
                 else if
                     NextChar = ('\r')
                 then
@@ -334,12 +371,11 @@ next_quoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
                     (
                         AfterCR_Result = ok(AfterCR_Char),
                         ( if AfterCR_Char = ('\n') then
-                            stream.unget(Stream, '\n', !State),
                             FieldValue = char_buffer.to_string(Buffer,
                                 !.State),
                             Field = raw_field(FieldValue, StartLineNo,
                                 StartColNo),
-                            Result = fr_field(Field)
+                            Result = fr_field_and_nl(Field)
                         else
                             increment_col_no(!ColNo),
                             stream.name(Stream, Name, !State),
@@ -428,7 +464,7 @@ next_quoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
     column_number::in, column_number::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, character, State, Error)
     ).
 
 next_unquoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
@@ -459,11 +495,10 @@ next_unquoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
             Char = ('\n')
         then
             !:LastSeen = last_seen_other,
-            stream.unget(Stream, '\n', !State),
             chomp_cr(Buffer, !State),
             FieldValue = char_buffer.to_string(Buffer, !.State),
             Field = raw_field(FieldValue, StartLineNo, StartColNo),
-            Result = fr_field(Field)
+            Result = fr_field_and_nl(Field)
         else
             !:LastSeen = last_seen_other,
             add(Buffer, Char, !State),
@@ -505,7 +540,7 @@ next_unquoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
     csv.res(Error)::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.putback(Stream, char, State, Error)
+        stream.reader(Stream, character, State, Error)
     ).
 
 consume_until_next_nl_or_eof(Reader, Result, !State) :-
