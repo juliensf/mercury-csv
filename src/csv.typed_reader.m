@@ -662,8 +662,7 @@ yyyy_mm_dd_to_date(ComponentStrs, DateTime) :-
     string.to_int(YearStr, Year),
     string.to_int(MonthStr, MonthNum),
     string.to_int(DayStr, Day),
-    % XXX The stdlib now provides int_to_month.
-    csv.typed_reader.int_to_month(MonthNum, Month),
+    calendar.int_to_month(MonthNum, Month),
     calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
 
 :- pred dd_mm_yyyy_to_date(list(string)::in, date::out) is semidet.
@@ -672,7 +671,7 @@ dd_mm_yyyy_to_date(ComponentStrs, DateTime) :-
     ComponentStrs = [DayStr, MonthStr, YearStr],
     string.to_int(DayStr, Day),
     string.to_int(MonthStr, MonthNum),
-    csv.typed_reader.int_to_month(MonthNum, Month),
+    calendar.int_to_month(MonthNum, Month),
     string.to_int(YearStr, Year),
     calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
 
@@ -681,7 +680,7 @@ dd_mm_yyyy_to_date(ComponentStrs, DateTime) :-
 mm_dd_yyyy_to_date(ComponentStrs, DateTime) :-
     ComponentStrs = [MonthStr, DayStr, YearStr],
     string.to_int(MonthStr, MonthNum),
-    csv.typed_reader.int_to_month(MonthNum, Month),
+    calendar.int_to_month(MonthNum, Month),
     string.to_int(DayStr, Day),
     string.to_int(YearStr, Year),
     calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
@@ -712,21 +711,6 @@ b_dd_yyyy_to_date(ComponentStrs, DateTime) :-
     abbrev_name_to_month(MonthStr, Month),
     string.to_int(DayStr, Day),
     calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
-
-:- pred int_to_month(int::in, month::out) is semidet.
-
-int_to_month(1, january).
-int_to_month(2, february).
-int_to_month(3, march).
-int_to_month(4, april).
-int_to_month(5, may).
-int_to_month(6, june).
-int_to_month(7, july).
-int_to_month(8, august).
-int_to_month(9, september).
-int_to_month(10, october).
-int_to_month(11, november).
-int_to_month(12, december).
 
     % XXX should have something like this in the standard library.
     %
@@ -839,7 +823,7 @@ mm_dd_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
     string.to_int(YearStr, Year),
     string.to_int(MonthStr, MonthNum),
     string.to_int(DayStr, Day),
-    csv.typed_reader.int_to_month(MonthNum, Month),
+    calendar.int_to_month(MonthNum, Month),
     TimeComponentStrs = [HourStr, MinuteStr],
     string.to_int(HourStr, Hour),
     string.to_int(MinuteStr, Minute),
@@ -857,7 +841,7 @@ dd_mm_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
     string.to_int(YearStr, Year),
     string.to_int(MonthStr, MonthNum),
     string.to_int(DayStr, Day),
-    csv.typed_reader.int_to_month(MonthNum, Month),
+    calendar.int_to_month(MonthNum, Month),
     TimeComponentStrs = [HourStr, MinuteStr],
     string.to_int(HourStr, Hour),
     string.to_int(MinuteStr, Minute),
