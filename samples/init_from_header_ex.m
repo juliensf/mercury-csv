@@ -15,8 +15,8 @@
 % YYYY-MM-DD format.
 % Field whose header does not match one of the above are discarded.
 %
-% After the the CSV data is read the records are printed the number of
-% discard fields is printed.
+% After the CSV data is read the records are printed, one per line, and then
+% the number of discarded fields is printed.
 %
 %-----------------------------------------------------------------------------%
 
@@ -87,7 +87,8 @@ main(!IO) :-
 :- pred make_field_desc(string::in, line_number::in, column_number::in,
     field_desc::out, int::in, int::out, io::di, io::uo) is det.
 
-make_field_desc(FieldName, _LineNumber, _ColumnNumber, FieldDesc, !NumDiscards, !IO) :-
+make_field_desc(FieldName, _LineNumber, _ColumnNumber, FieldDesc,
+        !NumDiscards, !IO) :-
     ( if string.prefix(FieldName, "INT_") then
         FieldDesc = int_field_desc
     else if string.prefix(FieldName, "FLOAT_") then
@@ -95,7 +96,8 @@ make_field_desc(FieldName, _LineNumber, _ColumnNumber, FieldDesc, !NumDiscards, 
     else if string.prefix(FieldName, "STRING_") then
         FieldDesc = string_field_desc
     else if string.prefix(FieldName, "DATE_") then
-        FieldDesc = field_desc(date(yyyy_mm_dd("-"), []), no_limit, trim_whitespace)
+        FieldDesc = field_desc(date(yyyy_mm_dd("-"), []), no_limit,
+            trim_whitespace)
     else
         % Otherwise it's not a field we recognise so just discard it.
         !:NumDiscards = !.NumDiscards + 1,
