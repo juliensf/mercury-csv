@@ -16,14 +16,14 @@
     csv.result(raw_record, Error)::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.reader(Stream, char, State, Error)
+        stream.unboxed_reader(Stream, char, State, Error)
     ).
 
 :- pred get_raw_csv(csv.raw_reader(Stream)::in,
     csv.result(raw_csv, Error)::out, State::di, State::uo) is det
     <= (
         stream.line_oriented(Stream, State),
-        stream.reader(Stream, char, State, Error)
+        stream.unboxed_reader(Stream, char, State, Error)
     ).
 
 %-----------------------------------------------------------------------------%
@@ -32,7 +32,7 @@
     T, csv.maybe_partial_res(T, Error), State, State)
     <= (
         stream.line_oriented(Stream, State),
-        stream.reader(Stream, char, State, Error)
+        stream.unboxed_reader(Stream, char, State, Error)
     ).
 :- mode fold(in, in(pred(in, in, out) is det),
     in, out, di, uo) is det.
@@ -43,7 +43,7 @@
     pred(raw_record, State, State), csv.res(Error), State, State)
     <= (
         stream.line_oriented(Stream, State),
-        stream.reader(Stream, char, State, Error)
+        stream.unboxed_reader(Stream, char, State, Error)
     ).
 :- mode fold_state(in, in(pred(in, di, uo) is det),
     out, di, uo) is det.
@@ -54,7 +54,7 @@
     pred(raw_record, T, T, State, State), T, csv.maybe_partial_res(T, Error),
     State, State) <= (
         stream.line_oriented(Stream, State),
-        stream.reader(Stream, char, State, Error)
+        stream.unboxed_reader(Stream, char, State, Error)
     ).
 :- mode fold2_state(in, in(pred(in, in, out, di, uo) is det),
     in, out, di, uo) is det.
@@ -65,7 +65,7 @@
     T, csv.maybe_partial_res(T, Error), State, State)
     <= (
         stream.line_oriented(Stream, State),
-        stream.reader(Stream, char, State, Error)
+        stream.unboxed_reader(Stream, char, State, Error)
     ).
 :- mode fold_maybe_stop(in, in(pred(in, out, in, out) is det),
     in, out, di, uo) is det.
@@ -76,7 +76,7 @@
     pred(raw_record, bool, State, State), csv.res(Error), State, State)
     <= (
         stream.line_oriented(Stream, State),
-        stream.reader(Stream, char, State, Error)
+        stream.unboxed_reader(Stream, char, State, Error)
     ).
 :- mode fold_state_maybe_stop(in, in(pred(in, out, di, uo) is det),
     out, di, uo) is det.
@@ -88,7 +88,7 @@
     csv.maybe_partial_res(T, Error), State, State)
     <= (
         stream.line_oriented(Stream, State),
-        stream.reader(Stream, char, State, Error)
+        stream.unboxed_reader(Stream, char, State, Error)
     ).
 :- mode fold2_state_maybe_stop(in,
     in(pred(in, out, in, out, di, uo) is det), in, out,

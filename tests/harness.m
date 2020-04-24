@@ -14,7 +14,7 @@
     csv.res(Error)::out, io::di, io::uo) is det
     <= (
         stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.unboxed_reader(Stream, char, io, Error)
     ).
 
 %-----------------------------------------------------------------------------%
@@ -61,7 +61,7 @@ process_csv(Reader, OutFile, Result, !IO) :-
     csv.res(Error)::out, io::di, io::uo) is det
     <= (
         stream.line_oriented(Stream, io),
-        stream.putback(Stream, char, io, Error)
+        stream.unboxed_reader(Stream, char, io, Error)
     ).
 
 process_records(Reader, OutFile, Result, !IO) :-
