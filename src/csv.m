@@ -481,7 +481,7 @@
     % init_reader_from_header(Stream, Params, HeaderToField, Result, !State):
     %
     % As above but use the parameters (see 'CSV raw readers' below) in Params
-    % when reading in the the header record.  The CSV reader returned will
+    % when reading in the header record.  The CSV reader returned will
     % inherit the field delimiter character from Params.
     %
 :- pred init_reader_from_header(Stream::in, init_from_header_params::in,
@@ -1035,7 +1035,7 @@ get_max_field_width(HeaderDesc, FieldDescs) = MaxWidth :-
             HeaderDesc = no_header,
             unexpected($file, $pred, "no fields and no header")
         ;
-            % What return here will not matter since the field width limit
+            % What we return here will not matter since the field width limit
             % will change once some fields are actually added.
             HeaderDesc = header_desc(MaxWidth)
         )
@@ -1192,7 +1192,7 @@ maybe_string_field_desc =
 %----------------------------------------------------------------------------%
 %----------------------------------------------------------------------------%
 
-:- type csv.raw_reader(Stream)
+:- type raw_reader(Stream)
     --->    raw_reader(
                 csv_raw_stream      :: Stream,
                 csv_raw_field_limit :: record_field_limit,
