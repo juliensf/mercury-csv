@@ -608,7 +608,7 @@
 %
 
     % A CSV raw reader gets CSV records from an underlying character stream
-    % and returns them as lists of strings.
+    % and returns the field values as strings.
     %
 :- type raw_reader(Stream).
 

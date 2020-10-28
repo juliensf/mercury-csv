@@ -96,7 +96,7 @@ get_client_quotation_mark_in_unquoted_field(client_raw_reader(R)) =
 %
 
     % Was the last character we saw when scanning the previous field an
-    % unquoted delimiter.
+    % unquoted delimiter?
     % We need to keep track of this information in order to handle unquoted
     % empty trailing fields properly.
     %
