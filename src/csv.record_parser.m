@@ -1,13 +1,8 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2020 Julien Fischer.
+% Copyright (C) 2013-2020, 2022 Julien Fischer.
 % See the file COPYING for license details.
-%-----------------------------------------------------------------------------%
-%
-% Actually, should just be named csv.parser, but since the stdlib has
-% a module by the name of parser that isn't a good idea.
-%
 %-----------------------------------------------------------------------------%
 
 :- module csv.record_parser.
@@ -30,6 +25,8 @@
 %-----------------------------------------------------------------------------%
 
 :- implementation.
+
+:- import_module csv.char_buffer.
 
 %-----------------------------------------------------------------------------%
 %

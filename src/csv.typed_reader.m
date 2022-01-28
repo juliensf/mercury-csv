@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2015, 2017-2020 Julien Fischer.
+% Copyright (C) 2013-2015, 2017-2020, 2022 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 
@@ -113,8 +113,7 @@
 
 :- implementation.
 
-:- import_module float.
-:- import_module parser.
+:- import_module csv.record_parser.
 :- import_module require.
 
 %-----------------------------------------------------------------------------%

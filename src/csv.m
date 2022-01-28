@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2020 Julien Fischer.
+% Copyright (C) 2013-2020, 2022 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 %
@@ -715,8 +715,6 @@
 :- include_module csv.char_buffer.
 :- include_module csv.record_parser.
 
-:- import_module csv.char_buffer.
-:- import_module csv.record_parser.
 :- import_module csv.typed_reader.
 :- import_module csv.raw_reader.
 
