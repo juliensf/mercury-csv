@@ -102,8 +102,8 @@
     ;       exactly(int).
 
     % What limit, if any, is imposed on the number of characters that may
-    % appear in a field.  This limit is exclusive of the quote characters
-    % for quoted fields?
+    % appear in a field? This limit is exclusive of the quote characters
+    % for quoted fields.
     %
 :- type field_width_limit
     --->    no_limit
@@ -130,7 +130,7 @@
 
     % Should CSV data containing comment lines be accepted?
     % A comment line begins with a comment start character in the first column
-    % and extends to the end of the line.   A comment line will be ignored.
+    % and extends to the end of the line.  A comment line will be ignored.
     %
     % The comment start character can be any character except for:
     %
@@ -187,7 +187,7 @@
 :- type field_desc
     --->    discard(field_width_limit)
             % The field should be discarded and not returned as part of the
-            % records.  Note that if there is a field width limit it will still
+            % records. Note that if there is a field width limit it will still
             % be enforced even though the field is being discarded.
             %
             % XXX fields in the header for discarded fields currently remain in
@@ -201,7 +201,7 @@
 
                 field_width_limit :: field_width_limit,
                 % What, if any, is the limit on the number of characters that
-                % this field may contain?  For quoted fields, the character
+                % this field may contain? For quoted fields, the character
                 % count does not include the quote characters.
 
                 field_trim_whitespace :: trim_whitespace
@@ -241,7 +241,7 @@
     ;       date(date_format, field_actions(date))
             % A Mercury calendar.date/0 value.
             % The time component of the resulting date is always set to
-            % midnight.  (XXX because the standard library doesn't have type
+            % midnight. (XXX because the standard library doesn't have type
             % that represents only dates without a time component.)
 
     ;       date_time(date_time_format, field_actions(date))
@@ -419,7 +419,7 @@
 
 % The predicates in this section create CSV readers by reading in the header
 % record from some CSV data and then calling a user-defined predicate to
-% generate a field descriptor from each header field.  These field descriptors
+% generate a field descriptor from each header field. These field descriptors
 % are then used when processing the remainder of the CSV data.
 
 :- type init_from_header_result(Stream, Error)
@@ -481,7 +481,7 @@
     % init_reader_from_header(Stream, Params, HeaderToField, Result, !State):
     %
     % As above but use the parameters (see 'CSV raw readers' below) in Params
-    % when reading in the header record.  The CSV reader returned will
+    % when reading in the header record. The CSV reader returned will
     % inherit the field delimiter character from Params.
     %
 :- pred init_reader_from_header(Stream::in, init_from_header_params::in,
@@ -557,7 +557,7 @@
 
     % read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO):
     % Open the text file FileName and read CSV data as per the given header and
-    % record descriptors.  The file is closed when EOF is reached.
+    % record descriptors. The file is closed when EOF is reached.
     %
 :- pred read_from_file(string::in, header_desc::in, record_desc::in,
     csv.result(csv, io.error)::out, io::di, io::uo) is det.
@@ -658,7 +658,7 @@
 :- type raw_field
     --->    raw_field(
                 raw_field_value   :: string,
-                % The value of of this field as a string.
+                % The value of this field as a string.
 
                 raw_field_line_no :: line_number,
                 % The starting line number for this field.
