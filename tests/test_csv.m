@@ -6,6 +6,7 @@
 :- interface.
 
 :- import_module io.
+
 :- pred main(io::di, io::uo) is det.
 
 %-----------------------------------------------------------------------------%
@@ -21,6 +22,7 @@
 :- import_module char.
 :- import_module getopt.
 :- import_module int.
+:- import_module io.file.
 :- import_module list.
 :- import_module maybe.
 :- import_module set.
@@ -144,8 +146,8 @@ run_test_valid(OptionTable, Name, MaybeParams, HeaderDesc, RecordDesc,
                             KeepFiles = yes
                         ;
                             KeepFiles = no,
-                            io.remove_file(ResFileName, _, !IO),
-                            io.remove_file(OutputFileName, _, !IO)
+                            io.file.remove_file(ResFileName, _, !IO),
+                            io.file.remove_file(OutputFileName, _, !IO)
                         )
                     else
                         add_failed_test(Name, !Results),
@@ -261,9 +263,9 @@ run_test_invalid(OptionTable, Name, MaybeParams, HeaderDesc, RecordDesc,
                                     KeepFiles = yes
                                 ;
                                     KeepFiles = no,
-                                    io.remove_file(ResFileName, _, !IO),
-                                    io.remove_file(OutputFileName, _, !IO),
-                                    io.remove_file(ErrFileName, _, !IO)
+                                    io.file.remove_file(ResFileName, _, !IO),
+                                    io.file.remove_file(OutputFileName, _, !IO),
+                                    io.file.remove_file(ErrFileName, _, !IO)
                                 )
                             else
                                 add_failed_test(Name, !Results),
