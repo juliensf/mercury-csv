@@ -52,6 +52,12 @@ To run the regression test suite, do:
 * write some more documentation
 * support CSV writers as well as readers
 
+## Mercury 22.01.X Compatibility
+
+The code on the master branch is **not** compatible with Mercury 22.01.X.
+If you require a version of `mercury_csv` that works with Mercury 22.01.X,
+then checkout the `mercury_22_01` branch.
+
 ## Mercury 20.06.X Compatibility
 
 The code on the master branch is **not** compatible with Mercury 20.06.X.
