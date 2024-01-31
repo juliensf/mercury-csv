@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2020, 2022 Julien Fischer.
+% Copyright (C) 2013-2020, 2022, 2024 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 %
@@ -70,7 +70,7 @@
     --->    invalid_field_delimiter_error(char).
 
     % Exceptions of this type are thrown if an invalid comment start character
-    % is pass to one of the reader initialization predicates below.
+    % is passed to one of the reader initialization predicates below.
     %
 :- type invalid_comment_char_error
     --->    invalid_comment_char_error(char).
@@ -130,7 +130,7 @@
 
     % Should CSV data containing comment lines be accepted?
     % A comment line begins with a comment start character in the first column
-    % and extends to the end of the line.  A comment line will be ignored.
+    % and extends to the end of the line. A comment line will be ignored.
     %
     % The comment start character can be any character except for:
     %
@@ -404,7 +404,7 @@
     % As above, but use the specified field delimiter character instead
     % of ','.
     %
-:- pragma obsolete(init_reader_delimiter/7).
+:- pragma obsolete(pred(init_reader_delimiter/7)).
 :- pred init_reader_delimiter(Stream::in, header_desc::in, record_desc::in,
     char::in, reader(Stream)::out, State::di, State::uo) is det
     <= (
@@ -556,6 +556,7 @@
 :- pred has_header(reader(Stream)::in) is semidet.
 
     % read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO):
+    %
     % Open the text file FileName and read CSV data as per the given header and
     % record descriptors. The file is closed when EOF is reached.
     %
