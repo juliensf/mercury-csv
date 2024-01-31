@@ -555,6 +555,11 @@
     %
 :- pred has_header(reader(Stream)::in) is semidet.
 
+%----------------------------------------------------------------------------%
+%
+% Reading CSV data from text file streams.
+%
+
     % read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO):
     %
     % Open the text file FileName and read CSV data as per the given header and
@@ -598,9 +603,7 @@
     ).
 
 :- instance stream.line_oriented(reader(Stream), io)
-    <= (
-        stream.line_oriented(Stream, io)
-    ).
+    <= stream.line_oriented(Stream, io).
 
 %----------------------------------------------------------------------------%
 %----------------------------------------------------------------------------%
@@ -636,7 +639,7 @@
         stream.unboxed_reader(Stream, char, State, Error)
     ).
 
-:- pragma obsolete(init_raw_reader/7).
+:- pragma obsolete(pred(init_raw_reader/7)).
 :- pred init_raw_reader(Stream::in, record_field_limit::in,
     field_width_limit::in, char::in, raw_reader(Stream)::out,
     State::di, State::uo) is det
