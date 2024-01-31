@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2020, 2022 Julien Fischer.
+% Copyright (C) 2013-2020, 2022, 2024 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 
@@ -33,54 +33,33 @@
 % Access information about the parser client.
 %
 
-:- func get_client_stream(client(Stream)) = Stream
-    <= (
-        stream.line_oriented(Stream, State),
-        stream.unboxed_reader(Stream, character, State, Error)
-    ).
+:- func get_client_stream(client(Stream)) = Stream.
 
 get_client_stream(client_reader(R)) = R ^ csv_stream.
 get_client_stream(client_raw_reader(R)) = R ^ csv_raw_stream.
 
-:- func get_client_field_limit(client(Stream)) = record_field_limit
-    <= (
-        stream.line_oriented(Stream, State),
-        stream.unboxed_reader(Stream, character, State, Error)
-    ).
+:- func get_client_field_limit(client(Stream)) = record_field_limit.
 
 get_client_field_limit(client_reader(R)) = R ^ csv_field_limit.
 get_client_field_limit(client_raw_reader(R)) = R ^ csv_raw_field_limit.
 
-:- func get_client_field_width(client(Stream)) = field_width_limit
-    <= (
-        stream.line_oriented(Stream, State),
-        stream.unboxed_reader(Stream, character, State, Error)
-    ).
+:- func get_client_field_width(client(Stream)) = field_width_limit.
 
 get_client_field_width(client_reader(R)) = R ^ csv_width_limit.
 get_client_field_width(client_raw_reader(R)) = R ^ csv_raw_width_limit.
 
-:- func get_client_field_delimiter(client(Stream)) = char
-    <= (
-        stream.line_oriented(Stream, State),
-        stream.unboxed_reader(Stream, character, State, Error)
-    ).
+:- func get_client_field_delimiter(client(Stream)) = char.
 
 get_client_field_delimiter(client_reader(R)) = R ^ csv_field_delimiter.
 get_client_field_delimiter(client_raw_reader(R)) = R ^ csv_raw_delimiter.
 
-:- func get_client_comments(client(Stream)) = comments
-    <= (
-        stream.line_oriented(Stream, State),
-        stream.unboxed_reader(Stream, character, State, Error)
-    ).
+:- func get_client_comments(client(Stream)) = comments.
 
 get_client_comments(client_reader(R)) = R ^ csv_comments.
 get_client_comments(client_raw_reader(_)) = no_comments.
 
 :- func get_client_quotation_mark_in_unquoted_field(client(Stream)) =
-    quotation_mark_in_unquoted_field
-    <= stream.line_oriented(Stream, State).
+    quotation_mark_in_unquoted_field.
 
 get_client_quotation_mark_in_unquoted_field(client_reader(R)) =
     R ^ csv_quotation_mark_in_unquoted_field.
