@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2020, 2022, 2024 Julien Fischer.
+% Copyright (C) 2013-2020, 2022, 2024-2025 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 %
@@ -195,7 +195,7 @@
 
     ;       field_desc(
                 field_type :: field_type,
-                % What type of Mercury value does this field represent?  Also,
+                % What type of Mercury value does this field represent? Also,
                 % any details of any optional checking or transformation that
                 % should be performed on the field value.
 
@@ -206,7 +206,7 @@
 
                 field_trim_whitespace :: trim_whitespace
                 % Should we trim leading- and trailing-whitespace from this
-                % field?  Such trimming is done before any other processing.
+                % field? Such trimming is done before any other processing.
             ).
 
     % Most field_types may have some actions associated with them.
@@ -434,7 +434,7 @@
                 % header?
 
                 init_from_header_field_width_limit :: field_width_limit,
-                % What limit, if any, is applied  to the width of fields
+                % What limit, if any, is applied to the width of fields
                 % in the header?
 
                 init_from_header_trim_whitespace :: trim_whitespace,
