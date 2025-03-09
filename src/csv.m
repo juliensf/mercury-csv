@@ -59,7 +59,8 @@
 % Field delimiter selection.
 %
 
-    % Succeeds iff the given character cannot be used as a field delimiter.
+    % Succeeds if and only if the given character cannot be used as a field
+    % delimiter.
     %
 :- pred is_invalid_delimiter(char::in) is semidet.
 
@@ -550,8 +551,8 @@
 :- pred set_record_desc(record_desc::in,
     reader(Stream)::in, reader(Stream)::out) is det.
 
-    % Succeeds iff the given CSV reader has been configured to expect a CSV
-    % header.
+    % Succeeds if and only if the given CSV reader has been configured to
+    % expect a CSV header.
     %
 :- pred has_header(reader(Stream)::in) is semidet.
 
