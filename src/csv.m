@@ -714,6 +714,28 @@
 
 %----------------------------------------------------------------------------%
 %----------------------------------------------------------------------------%
+%
+% Write CSV.
+%
+
+    % Write csv field
+    % Escape field if needed, otherwise write non-escaped field
+    % The field will be escaped if it contains the field-separator-char,
+    % line breaks and double quotes.
+    %
+    % Usage:
+    % write_field(SeparatorChar, String, !IO).
+    % Write a list of strings as csv-record:
+    % io.write_list(List, SeparatorString, write_field(SeparatorChar), !IO)
+    %
+:- pred write_field(char::in, string::in, io::di, io::uo) is det.
+
+
+:- pred write_field(char::in, io.text_output_stream::in, string::in,
+    io::di, io::uo) is det.
+
+%----------------------------------------------------------------------------%
+%----------------------------------------------------------------------------%
 
 :- implementation.
 
@@ -1288,6 +1310,62 @@ default_field_delimiter = (',').
 
 is_invalid_delimiter(('"')).
 is_invalid_delimiter(('\n')).
+
+
+%-----------------------------------------------------------------------------%
+
+write_field(FieldSeparatorChar, String, !IO) :-
+    output_stream(Stream, !IO),
+    write_field(FieldSeparatorChar, Stream, String, !IO).
+
+
+write_field(FieldSeparatorChar, Stream, String, !IO) :-
+    Chars = string.to_char_list(String),
+    ( if field_needs_quotation(FieldSeparatorChar, Chars)
+    then
+        io.write_char(Stream, '"', !IO),
+        list.foldl(write_char_maybe_escaped(Stream), Chars, !IO),
+        io.write_char(Stream, '"', !IO)
+    else
+        io.write_string(Stream, String, !IO)
+    ).
+
+
+    % A field needs to be enclosed in quotes if it contains
+    % - the field separator character or
+    % - a newline or
+    % - a double quote
+    %
+:- pred field_needs_quotation(char::in, list(char)::in) is semidet.
+
+field_needs_quotation(FieldSeparatorChar, Chars) :-
+    ( if list.all_true(textdata_char(FieldSeparatorChar), Chars)
+    then false
+    else true
+    ).
+
+
+:- pred textdata_char(char::in, char::in) is semidet.
+
+textdata_char(FieldSeparatorChar, Char) :-
+    ( if    Char = FieldSeparatorChar then fail
+    else if Char = '\n' then fail
+    else if Char = '"' then fail
+    else true
+    ).
+
+
+:- pred write_char_maybe_escaped(io.text_output_stream::in, char::in,
+    io::di, io::uo) is det.
+
+write_char_maybe_escaped(Stream, Char, !IO) :-
+    ( if Char = '"'
+    then
+        io.write_char(Stream, '"', !IO)
+        % escape the quotation char by doubling it
+    else true
+    ),
+    io.write_char(Stream, Char, !IO).
 
 %----------------------------------------------------------------------------%
 :- end_module csv.
