@@ -782,7 +782,7 @@ init_reader(Stream, HeaderDesc, RecordDesc, Reader, !State) :-
     ),
     init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State).
 
-init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, !State) :-
+init_reader(Stream, Params, HeaderDesc, RecordDesc, Reader, State, State) :-
     Params = reader_params(
         BlankLines,
         TrailingFields,
@@ -1212,7 +1212,7 @@ init_raw_reader(Stream, Reader, !State) :-
         no_quotation_mark_in_unquoted_field),
     init_raw_reader(Stream, Params, Reader, !State).
 
-init_raw_reader(Stream, Params, Reader, !State) :-
+init_raw_reader(Stream, Params, Reader, State, State) :-
     Params = raw_reader_params(RecordLimit, FieldWidthLimit, FieldDelimiter,
         QuotationMarkInUnquotedField),
     ( if is_invalid_delimiter(FieldDelimiter) then
@@ -1224,7 +1224,7 @@ init_raw_reader(Stream, Params, Reader, !State) :-
         QuotationMarkInUnquotedField).
 
 init_raw_reader(Stream, RecordLimit, FieldWidthLimit, FieldDelimiter, Reader,
-        !State) :-
+        State, State) :-
     ( if is_invalid_delimiter(FieldDelimiter) then
         throw(invalid_field_delimiter_error(FieldDelimiter))
     else

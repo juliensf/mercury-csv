@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2020, 2022, 2024 Julien Fischer.
+% Copyright (C) 2013-2020, 2022, 2024-2025 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 
@@ -73,8 +73,8 @@ get_client_quotation_mark_in_unquoted_field(client_raw_reader(R)) =
 
     % Was the last character we saw when scanning the previous field an
     % unquoted delimiter?
-    % We need to keep track of this information in order to handle unquoted
-    % empty trailing fields properly.
+    % We need to track this information to handle unquoted empty trailing
+    % fields properly.
     %
 :- type last_seen
     --->    last_seen_start
