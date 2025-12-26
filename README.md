@@ -1,6 +1,6 @@
 # Mercury-CSV
 
-`mercury_csv` is a [Mercury](http://www.mercurylang.org) library for reading
+`mercury_csv` is a [Mercury](https://www.mercurylang.org) library for reading
 CSV data from character streams.
 
 ## Features
