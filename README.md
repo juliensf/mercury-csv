@@ -31,12 +31,12 @@ See the file [COPYING](COPYING) for details.
 Check the values in the file [Make.options](Make.options) to see if they agree
 with your system, then do:
 
-    $ make install
+    make install
 
 You can also override values in [Make.options](Make.options) on the command
 line, for example
 
-    $ make INSTALL_PREFIX=/foo/bar install
+    make INSTALL_PREFIX=/foo/bar install
 
 causes the library to be installed in the directory `/foo/bar`.
 
@@ -44,7 +44,7 @@ causes the library to be installed in the directory `/foo/bar`.
 
 To run the regression test suite, do:
 
-    $ make runtests
+    make runtests
 
 ## TODO
 
