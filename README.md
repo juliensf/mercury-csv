@@ -10,11 +10,11 @@ CSV data from character streams.
 * handles CRLF line endings
 * allows blank fields
 * supports reading fields either as strings (raw) or as Mercury standard
-  library types (typed).
+  library types (typed)
 * the "typed" interface allows an arbitrary number of actions
   (e.g. transformations, validity checks etc) to be performed on
-  each field after it is read.
-* allows limits to be imposed on number of characters in a field
+  each field after it is read
+* allows limits to be imposed on the number of characters in a field
   and the number of fields in a record
 * supports the presence of an optional header record
 * field delimiter character can be selected by the user
@@ -56,19 +56,19 @@ To run the regression test suite, do:
 
 The code on the master branch is **not** compatible with Mercury 22.01.X.
 If you require a version of `mercury_csv` that works with Mercury 22.01.X,
-then checkout the `mercury_22_01` branch.
+then use the `mercury_22_01` branch.
 
 ## Mercury 20.06.X Compatibility
 
 The code on the master branch is **not** compatible with Mercury 20.06.X.
 If you require a version of `mercury_csv` that works with Mercury 20.06.X,
-then checkout the `mercury_20_06` branch.
+then use the `mercury_20_06` branch.
 
 ## Mercury 20.01.X Compatibility
 
 The code on the master branch is **not** compatible with Mercury 20.01.X.
 If you require a version of `mercury_csv` that works with Mercury 20.01.X,
-then checkout the `mercury_20_01` branch.
+then use the `mercury_20_01` branch.
 
 ## Author
 
