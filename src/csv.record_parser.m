@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2020, 2022, 2024-2025 Julien Fischer.
+% Copyright (C) 2013-2020, 2022, 2024-2026 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 
@@ -187,7 +187,7 @@ get_fields(Reader, NextChar, !.Fields, Result, !LastSeen, !FieldsRead,
             !.Fields = [],
             Result = fsr_eof
         ;
-            % The EOF was the terminating this record.
+            % The EOF terminated this record.
             !.Fields = [_ | _],
             list.reverse(!Fields),
             Result = fsr_fields(raw_record(StartLineNo, !.Fields))
@@ -386,8 +386,8 @@ next_quoted_field(Reader, StartLineNo, StartColNo, FieldNo, Buffer,
                 Result = fr_error(stream_error(Error))
             )
         else
-            % NOTE: quoted delimiter characters do not count has having
-            % seen a delimiter.
+            % NOTE: quoted delimiter characters do not count as having seen a
+            % delimiter.
             !:LastSeen = last_seen_other,
             add(Buffer, Char, !State),
             % Reset the column number if we see a newline.

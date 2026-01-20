@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2017, 2022 Julien Fischer.
+% Copyright (C) 2013-2017, 2022, 2026 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 
@@ -35,7 +35,7 @@
 
     % XXX this could be much more efficient if we implemented it directly
     % as code in the target language.
-    % NOTE: if we do so, we should use the maximum field width, if available
+    % NOTE: if we do so, we should use the maximum field width, if available,
     % to initialise the buffer.
     %
 :- type char_buffer_rep

@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2020, 2022, 2024-2025 Julien Fischer.
+% Copyright (C) 2013-2020, 2022, 2024-2026 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 %
@@ -140,7 +140,7 @@
     % * The QUOTATION MARK (U+0022) character.
     %
     % * A whitespace character (any character for which char.is_whitespace/1
-    %   is true.)
+    %   is true).
     %
 :- type comments
     --->    no_comments
@@ -231,7 +231,7 @@
             % The field is a Mercury float value.
 
     ;       floatstr(field_actions(string))
-            % The field represents a float value, but we return it as Mercury
+            % The field represents a float value, but we return it as a Mercury
             % string.
             % NOTE: after applying any user actions the value is checked again.
             % An error is returned if the string no longer represents a float.
@@ -242,7 +242,7 @@
     ;       date(date_format, field_actions(date))
             % A Mercury calendar.date/0 value.
             % The time component of the resulting date is always set to
-            % midnight. (XXX because the standard library doesn't have type
+            % midnight. (XXX because the standard library doesn't have a type
             % that represents only dates without a time component.)
 
     ;       date_time(date_time_format, field_actions(date))
@@ -302,7 +302,7 @@
     % The second string argument specifies how the date and time components
     % are separated.
     % The third argument specifies how the time components are separated.
-    % XXX currently all three must be different from each other.
+    % XXX currently all three must be distinct.
     %
 :- type date_time_format
     --->   mm_dd_yyyy_hh_mm(string, string, string)  % e.g. 03-24-2013 12:23
@@ -468,7 +468,7 @@
 
     % init_reader_from_header(Stream, HeaderToField, Result, !State):
     % Initialize a CSV reader from Stream using the predicate HeaderToField
-    % to creating a field descriptor corresponding to each header field.
+    % to create a field descriptor corresponding to each header field.
     %
 :- pred init_reader_from_header(Stream::in,
     header_to_field_pred(State)::in(header_to_field_pred),
@@ -765,7 +765,7 @@ make_error_message(Error) = Msg :-
                 csv_comments        :: comments,
                 csv_quotation_mark_in_unquoted_field
                     :: quotation_mark_in_unquoted_field,
-                % These fields are set directly be the user.
+                % These fields are set directly by the user.
 
                 csv_field_limit  :: record_field_limit,
                 csv_width_limit  :: field_width_limit
