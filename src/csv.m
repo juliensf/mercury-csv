@@ -256,7 +256,7 @@
             % converting the field's string representation into a univ.
 
     ;       maybe(field_type).
-            % A Mercury maybe/0 value.
+            % A Mercury maybe/1 value.
             % A blank field in the CSV data corresponds to maybe.no/0.
             % A software_error/0 exception is thrown if nested maybe fields
             % are encountered.
@@ -313,10 +313,10 @@
 % Convenience functions for common field types.
 %
 
-% The following all create field_desc that have no width limit, will cause
+% The following all create a field_desc that has no width limit, will cause
 % whitespace to be trimmed and will not apply any field actions.
 
-    % NOTE: the field desc returned by this function will not allow floats.
+    % NOTE: the field_desc returned by this function will not allow floats.
     %
 :- func int_field_desc = field_desc.
 :- func date_field_desc(date_format) = field_desc.
@@ -329,6 +329,8 @@
 :- func maybe_floatstr_field_desc = field_desc.
 :- func maybe_int_field_desc = field_desc.
 :- func maybe_string_field_desc = field_desc.
+
+:- func discard_field_desc = field_desc.
 
 %----------------------------------------------------------------------------%
 %
@@ -561,12 +563,13 @@
 % Reading CSV data from text file streams.
 %
 
-    % read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO):
+    % read_from_named_file(FileName, HeaderDesc, RecordDesc, Result, !IO):
     %
     % Open the text file FileName and read CSV data as per the given header and
-    % record descriptors. The file is closed when EOF is reached.
+    % record descriptors. If either the opening or the reading fails, return
+    % an error message describing the failure.
     %
-:- pred read_from_file(string::in, header_desc::in, record_desc::in,
+:- pred read_from_named_file(string::in, header_desc::in, record_desc::in,
     csv.result(csv, io.error)::out, io::di, io::uo) is det.
 
 %----------------------------------------------------------------------------%
@@ -1088,20 +1091,13 @@ get_field_width_limit(field_desc(_, MaybeLimit, _)) = MaybeLimit.
 
 %----------------------------------------------------------------------------%
 
-read_from_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
+read_from_named_file(FileName, HeaderDesc, RecordDesc, Result, !IO) :-
     io.open_input(FileName, OpenFileResult, !IO),
     (
         OpenFileResult = ok(File),
         init_reader(File, HeaderDesc, RecordDesc, Reader, !IO),
         get(Reader, Result, !IO),
-        (
-            ( Result = ok(_)
-            ; Result = eof
-            ),
-            io.close_input(File, !IO)
-        ;
-            Result = error(_)
-        )
+        io.close_input(File, !IO)
     ;
         OpenFileResult = error(IO_Error),
         Result = error(stream_error(IO_Error))
@@ -1138,6 +1134,8 @@ maybe_int_field_desc =
 
 maybe_string_field_desc =
     field_desc(maybe(string([])), no_limit, trim_whitespace).
+
+discard_field_desc = discard(no_limit).
 
 %----------------------------------------------------------------------------%
 
