@@ -239,14 +239,14 @@
     ;       string(field_actions(string))
             % A Mercury string.
 
-    ;       date(date_format, field_actions(date))
-            % A Mercury calendar.date/0 value.
+    ;       date(date_format, field_actions(date_time))
+            % A Mercury calendar.date_time/0 value.
             % The time component of the resulting date is always set to
             % midnight. (XXX because the standard library doesn't have a type
             % that represents only dates without a time component.)
 
-    ;       date_time(date_time_format, field_actions(date))
-            % A Mercury calendar.date/0 value.
+    ;       date_time(date_time_format, field_actions(date_time))
+            % A Mercury calendar.date_time/0 value.
             % The time component is set as specified.
             % XXX support for this is currently very limited.
 
@@ -368,16 +368,16 @@
     ;       float(float)
     ;       floatstr(string)
     ;       string(string)
-    ;       date(date)
-    ;       date_time(date)
+    ;       date(date_time)
+    ;       date_time(date_time)
     ;       univ(univ)
     ;       maybe_bool(maybe(bool))
     ;       maybe_int(maybe(int))
     ;       maybe_float(maybe(float))
     ;       maybe_floatstr(maybe(string))
     ;       maybe_string(maybe(string))
-    ;       maybe_date(maybe(date))
-    ;       maybe_date_time(maybe(date))
+    ;       maybe_date(maybe(date_time))
+    ;       maybe_date_time(maybe(date_time))
     ;       maybe_univ(maybe(univ)).
 
 :- type field_values == list(field_value).

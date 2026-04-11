@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2013-2015, 2017-2020, 2022 Julien Fischer.
+% Copyright (C) 2013-2015, 2017-2020, 2022, 2026 Julien Fischer.
 % See the file COPYING for license details.
 %-----------------------------------------------------------------------------%
 
@@ -602,7 +602,7 @@ process_field_apply_actions_string(Actions, RawField, FieldNo,
 %
 
 :- pred process_field_apply_actions_date(date_format::in,
-    field_actions(date)::in, raw_field::in, field_number::in,
+    field_actions(date_time)::in, raw_field::in, field_number::in,
     process_field_result::out) is det.
 
 process_field_apply_actions_date(Format, Actions, RawField, FieldNo,
@@ -643,8 +643,8 @@ process_field_apply_actions_date(Format, Actions, RawField, FieldNo,
         MaybeResult = pfr_error(LineNo, ColNo, FieldNo, DateError)
     ).
 
-:- pred convert_date(pred(list(string), date)::in(pred(in, out) is semidet),
-    string::in, string::in, maybe_error(date)::out) is det.
+:- pred convert_date(pred(list(string), date_time)::in(pred(in, out) is semidet),
+    string::in, string::in, maybe_error(date_time)::out) is det.
 
 convert_date(ConvertPred, Separator, DateStr, MaybeDate) :-
     DateComponentStrs = string.split_at_string(Separator, DateStr),
@@ -654,7 +654,7 @@ convert_date(ConvertPred, Separator, DateStr, MaybeDate) :-
         MaybeDate = error("not a valid date")
     ).
 
-:- pred yyyy_mm_dd_to_date(list(string)::in, date::out) is semidet.
+:- pred yyyy_mm_dd_to_date(list(string)::in, date_time::out) is semidet.
 
 yyyy_mm_dd_to_date(ComponentStrs, DateTime) :-
     ComponentStrs = [YearStr, MonthStr, DayStr],
@@ -662,9 +662,9 @@ yyyy_mm_dd_to_date(ComponentStrs, DateTime) :-
     string.to_int(MonthStr, MonthNum),
     string.to_int(DayStr, Day),
     calendar.int_to_month(MonthNum, Month),
-    calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
+    calendar.init_date_time(Year, Month, Day, 0, 0, 0, 0, DateTime).
 
-:- pred dd_mm_yyyy_to_date(list(string)::in, date::out) is semidet.
+:- pred dd_mm_yyyy_to_date(list(string)::in, date_time::out) is semidet.
 
 dd_mm_yyyy_to_date(ComponentStrs, DateTime) :-
     ComponentStrs = [DayStr, MonthStr, YearStr],
@@ -672,9 +672,9 @@ dd_mm_yyyy_to_date(ComponentStrs, DateTime) :-
     string.to_int(MonthStr, MonthNum),
     calendar.int_to_month(MonthNum, Month),
     string.to_int(YearStr, Year),
-    calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
+    calendar.init_date_time(Year, Month, Day, 0, 0, 0, 0, DateTime).
 
-:- pred mm_dd_yyyy_to_date(list(string)::in, date::out) is semidet.
+:- pred mm_dd_yyyy_to_date(list(string)::in, date_time::out) is semidet.
 
 mm_dd_yyyy_to_date(ComponentStrs, DateTime) :-
     ComponentStrs = [MonthStr, DayStr, YearStr],
@@ -682,34 +682,34 @@ mm_dd_yyyy_to_date(ComponentStrs, DateTime) :-
     calendar.int_to_month(MonthNum, Month),
     string.to_int(DayStr, Day),
     string.to_int(YearStr, Year),
-    calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
+    calendar.init_date_time(Year, Month, Day, 0, 0, 0, 0, DateTime).
 
-:- pred yyyy_b_dd_to_date(list(string)::in, date::out) is semidet.
+:- pred yyyy_b_dd_to_date(list(string)::in, date_time::out) is semidet.
 
 yyyy_b_dd_to_date(ComponentStrs, DateTime) :-
     ComponentStrs = [YearStr, MonthStr, DayStr],
     string.to_int(YearStr, Year),
     abbrev_name_to_month(MonthStr, Month),
     string.to_int(DayStr, Day),
-    calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
+    calendar.init_date_time(Year, Month, Day, 0, 0, 0, 0, DateTime).
 
-:- pred dd_b_yyyy_to_date(list(string)::in, date::out) is semidet.
+:- pred dd_b_yyyy_to_date(list(string)::in, date_time::out) is semidet.
 
 dd_b_yyyy_to_date(ComponentStrs, DateTime) :-
     ComponentStrs = [DayStr, MonthStr, YearStr],
     string.to_int(YearStr, Year),
     abbrev_name_to_month(MonthStr, Month),
     string.to_int(DayStr, Day),
-    calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
+    calendar.init_date_time(Year, Month, Day, 0, 0, 0, 0, DateTime).
 
-:- pred b_dd_yyyy_to_date(list(string)::in, date::out) is semidet.
+:- pred b_dd_yyyy_to_date(list(string)::in, date_time::out) is semidet.
 
 b_dd_yyyy_to_date(ComponentStrs, DateTime) :-
     ComponentStrs = [MonthStr, DayStr, YearStr],
     string.to_int(YearStr, Year),
     abbrev_name_to_month(MonthStr, Month),
     string.to_int(DayStr, Day),
-    calendar.init_date(Year, Month, Day, 0, 0, 0, 0, DateTime).
+    calendar.init_date_time(Year, Month, Day, 0, 0, 0, 0, DateTime).
 
     % XXX should have something like this in the standard library.
     %
@@ -826,7 +826,7 @@ mm_dd_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
     TimeComponentStrs = [HourStr, MinuteStr],
     string.to_int(HourStr, Hour),
     string.to_int(MinuteStr, Minute),
-    calendar.init_date(Year, Month, Day, Hour, Minute, 0, 0, DateTime).
+    calendar.init_date_time(Year, Month, Day, Hour, Minute, 0, 0, DateTime).
 
 :- pred dd_mm_yyyy_hh_mm_to_date(string::in, string::in,
     list(string)::in, date::out) is semidet.
@@ -844,7 +844,7 @@ dd_mm_yyyy_hh_mm_to_date(DateSep, TimeSep, DateTimeComponentStrs,
     TimeComponentStrs = [HourStr, MinuteStr],
     string.to_int(HourStr, Hour),
     string.to_int(MinuteStr, Minute),
-    calendar.init_date(Year, Month, Day, Hour, Minute, 0, 0, DateTime).
+    calendar.init_date_time(Year, Month, Day, Hour, Minute, 0, 0, DateTime).
 
 %----------------------------------------------------------------------------%
 %

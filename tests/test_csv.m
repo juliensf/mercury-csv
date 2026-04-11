@@ -22,6 +22,7 @@
 :- import_module char.
 :- import_module getopt.
 :- import_module int.
+:- import_module io.call_system.
 :- import_module io.file.
 :- import_module list.
 :- import_module maybe.
@@ -135,7 +136,7 @@ run_test_valid(OptionTable, Name, MaybeParams, HeaderDesc, RecordDesc,
                 string.format("diff -u %s %s > %s",
                     [s(ExpFileName), s(OutputFileName), s(ResFileName)],
                     DiffCmd),
-                io.call_system(DiffCmd, DiffCmdRes, !IO),
+                io.call_system.call_system(DiffCmd, DiffCmdRes, !IO),
                 (
                     DiffCmdRes = ok(DiffExitStatus),
                     ( if DiffExitStatus = 0 then
@@ -252,7 +253,7 @@ run_test_invalid(OptionTable, Name, MaybeParams, HeaderDesc, RecordDesc,
                         string.format("diff -u %s %s > %s",
                             [s(ExpErrFileName), s(ErrFileName), s(ResFileName)],
                             DiffCmd),
-                        io.call_system(DiffCmd, DiffCmdRes, !IO),
+                        io.call_system.call_system(DiffCmd, DiffCmdRes, !IO),
                         (
                             DiffCmdRes = ok(DiffExitStatus),
                             ( if DiffExitStatus = 0 then
